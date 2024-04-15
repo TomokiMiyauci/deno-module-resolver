@@ -4,7 +4,9 @@ import { toFileUrl } from "jsr:@std/path";
 export function esmResolve(
   module: ModuleEntryEsm,
 ): { url: URL; mediaType: MediaType } {
-  if (module.local === null) throw new Error();
+  if (module.local === null) throw new Error("local file does not exist");
 
-  return { url: toFileUrl(module.local), mediaType: module.mediaType };
+  const url = toFileUrl(module.local);
+
+  return { url, mediaType: module.mediaType };
 }

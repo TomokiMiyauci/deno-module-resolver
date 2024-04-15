@@ -17,7 +17,9 @@ export async function npmResolve(
   if (!npm) throw new Error("npm not found");
 
   const { name, version } = npm;
-  const packageSubpath = ".";
+  const npmSpecifier = `npm:/${name}@${version}`;
+  const subpath = module.specifier.slice(npmSpecifier.length);
+  const packageSubpath = `.${subpath}` as const;
 
   if (ctx.npm.type === "global") {
     const baseURL = join(
