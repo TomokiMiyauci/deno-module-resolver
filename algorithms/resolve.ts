@@ -6,6 +6,7 @@ import {
   SourceFileInfo,
 } from "../modules/deno/info.ts";
 import { moduleResolve } from "./module_resolve.ts";
+import { esmFileFormat } from "../deps.ts";
 
 interface ResolveResult {
   url: URL;
@@ -24,7 +25,7 @@ export async function resolve(
 
   let module: ModuleEntry | undefined = ctx.module;
   let source: SourceFileInfo | undefined = ctx.source;
-  let mediaType: MediaType = "Unknown";
+  let mediaType: MediaType | undefined;
 
   if (URL.canParse(specifier)) {
     const url = new URL(specifier);
@@ -55,6 +56,7 @@ export async function resolve(
         source = sourceFile;
         resolved = result.url;
         mediaType = result.mediaType;
+
         break;
       }
 
@@ -132,10 +134,33 @@ export async function resolve(
     realURL = await ctx.realUrl(resolved);
   }
 
-  return {
-    url: realURL,
-    module,
-    source,
-    mediaType,
-  };
+  if (!mediaType) {
+    const format = await esmFileFormat(realURL, ctx);
+
+    if (format) {
+      switch (format) {
+        case "module": {
+          mediaType = "Mjs";
+          break;
+        }
+
+        case "commonjs": {
+          mediaType = "Cjs";
+          break;
+        }
+        case "json": {
+          mediaType = "Json";
+          break;
+        }
+        case "wasm": {
+          mediaType = "Wasm";
+          break;
+        }
+      }
+    } else {
+      mediaType = "Unknown";
+    }
+  }
+
+  return { url: realURL, module, source, mediaType };
 }

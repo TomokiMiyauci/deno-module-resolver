@@ -11,7 +11,7 @@ export async function moduleResolve(
   module: ModuleEntry,
   source: SourceFileInfo,
   ctx: Context,
-): Promise<{ url: URL; mediaType: MediaType }> {
+): Promise<{ url: URL; mediaType?: MediaType }> {
   if ("error" in module) {
     throw new Error(module.error);
   }
@@ -24,10 +24,7 @@ export async function moduleResolve(
     case "npm": {
       const url = await npmResolve(module, source, ctx);
 
-      return {
-        url,
-        mediaType: "Unknown",
-      };
+      return { url };
     }
 
     case "asserted":
