@@ -1,18 +1,13 @@
-import { type Context } from "./context.ts";
-import {
-  info,
-  MediaType,
-  ModuleEntry,
-  SourceFileInfo,
-} from "../modules/deno/info.ts";
+import { type Context, type Info } from "./context.ts";
+import { MediaType } from "../modules/deno/info.ts";
 import { moduleResolve } from "./module_resolve.ts";
 import { esmFileFormat } from "../deps.ts";
+import { urlResolve } from "./url_resolve.ts";
 
 interface ResolveResult {
   url: URL;
-  source?: SourceFileInfo;
-  module?: ModuleEntry;
   mediaType: MediaType;
+  info?: Info;
 }
 
 export async function resolve(
@@ -22,68 +17,28 @@ export async function resolve(
 ): Promise<ResolveResult> {
   // 1. Let resolved be undefined.
   let resolved: URL;
-
-  let module: ModuleEntry | undefined = ctx.module;
-  let source: SourceFileInfo | undefined = ctx.source;
   let mediaType: MediaType | undefined;
+  let info: Info | undefined;
 
   if (URL.canParse(specifier)) {
-    const url = new URL(specifier);
+    const result = await urlResolve(specifier, ctx);
 
-    switch (url.protocol) {
-      case "jsr:":
-      case "https:":
-      case "http:":
-      case "npm:": {
-        const specifier = url.toString();
-        const sourceFile = await info(specifier);
-        const redirects = new Map<string, string>(
-          Object.entries(sourceFile.redirects),
-        );
-        const normalized = redirects.has(specifier)
-          ? redirects.get(specifier)!
-          : specifier;
-
-        const modules = new Map<string, ModuleEntry>(
-          sourceFile.modules.map((entry) => [entry.specifier, entry]),
-        );
-
-        module = modules.get(normalized);
-
-        if (!module) throw new Error("Module not found");
-
-        const result = await moduleResolve(module, sourceFile, ctx);
-        source = sourceFile;
-        resolved = result.url;
-        mediaType = result.mediaType;
-
-        break;
-      }
-
-      case "node:":
-      case "file:":
-      case "data:": {
-        resolved = url;
-        break;
-      }
-
-      default: {
-        throw new Error("Unknown");
-      }
-    }
+    resolved = result.url;
+    info = result.info;
+    mediaType = result.mediaType;
   } else if (
     ["/", "./", "../"].some((value) => specifier.startsWith(value))
   ) {
-    if (ctx.module && ctx.source) {
-      if ("error" in ctx.module) {
-        throw new Error(ctx.module.error);
+    if (ctx.info) {
+      if ("error" in ctx.info.module) {
+        throw new Error(ctx.info.module.error);
       }
 
-      if (ctx.module.kind !== "esm") {
+      if (ctx.info.module.kind !== "esm") {
         resolved = new URL(specifier, referrerURL);
       } else {
         const deps = new Map(
-          ctx.module.dependencies?.map((dep) => [dep.specifier, dep]),
+          ctx.info.module.dependencies?.map((dep) => [dep.specifier, dep]),
         );
         const dependency = deps.get(specifier);
 
@@ -94,45 +49,44 @@ export async function resolve(
         }
 
         const modules = new Map(
-          ctx.source.modules.map((module) => [module.specifier, module]),
+          ctx.info.source.modules.map((module) => [module.specifier, module]),
         );
 
-        module = modules.get(dependency.code.specifier);
+        const module = modules.get(dependency.code.specifier);
 
         if (!module) throw new Error("Module not found");
 
-        const result = await moduleResolve(module, ctx.source, ctx);
+        const result = await moduleResolve(module, ctx.info.source, ctx);
 
         resolved = result.url;
         mediaType = result.mediaType;
+        info = { module, source: ctx.info.source };
       }
     } else {
       resolved = new URL(specifier, referrerURL);
     }
   } else if (specifier.startsWith("#")) {
+    throw new Error("imports field is not supported in npm module");
     // 1. Set resolved to the result of PACKAGE_IMPORTS_RESOLVE(specifier, parentURL, defaultConditions).
-    resolved = await PACKAGE_IMPORTS_RESOLVE(
-      specifier as `#${string}`,
-      referrerURL,
-      ctx.conditions,
-      ctx,
-    );
+    // resolved = await PACKAGE_IMPORTS_RESOLVE(
+    //   specifier as `#${string}`,
+    //   referrerURL,
+    //   ctx.conditions,
+    //   ctx,
+    // );
   } // 5. Otherwise,
   else {
     // 1. Note: specifier is now a bare specifier.
     // 2. Set resolved the result of PACKAGE_RESOLVE(specifier, parentURL).
-    const result = await resolve(`npm:${specifier}`, referrerURL, ctx);
+    const result = await urlResolve(`npm:/${specifier}`, ctx);
     resolved = result.url;
-    module = result.module;
-    source = result.source;
     mediaType = result.mediaType;
+    info = result.info;
   }
 
-  let realURL: URL = resolved;
-
-  if (resolved.protocol === "file:") {
-    realURL = await ctx.realUrl(resolved);
-  }
+  const realURL = resolved.protocol === "file:"
+    ? await ctx.realUrl(resolved) ?? resolved
+    : resolved;
 
   if (!mediaType) {
     const format = await esmFileFormat(realURL, ctx);
@@ -162,5 +116,5 @@ export async function resolve(
     }
   }
 
-  return { url: realURL, module, source, mediaType };
+  return { url: realURL, info, mediaType };
 }
