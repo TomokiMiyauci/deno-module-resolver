@@ -1,5 +1,5 @@
 import { moduleResolve } from "./module_resolve.ts";
-import { info, ModuleEntry } from "../modules/deno/info.ts";
+import { ModuleEntry } from "../modules/deno/info.ts";
 import { type Context } from "./context.ts";
 
 export async function urlResolve(specifier: URL | string, ctx: Context) {
@@ -11,7 +11,7 @@ export async function urlResolve(specifier: URL | string, ctx: Context) {
     case "http:":
     case "npm:": {
       const specifier = url.toString();
-      const sourceFile = await info(specifier);
+      const sourceFile = await ctx.getInfo(specifier);
       const redirects = new Map<string, string>(
         Object.entries(sourceFile.redirects),
       );
@@ -26,6 +26,7 @@ export async function urlResolve(specifier: URL | string, ctx: Context) {
       const module = modules.get(normalized);
 
       if (!module) throw new Error("Module not found");
+      if ("error" in module) throw new Error(module.error);
 
       const result = await moduleResolve(module, sourceFile, ctx);
 

@@ -1,9 +1,9 @@
 import { ModuleEntryNpm, SourceFileInfo } from "../modules/deno/info.ts";
 import { toFileUrl } from "jsr:@std/path";
 import { join, normalize } from "jsr:@std/url";
-import { packageExportsResolve, readPackageJson } from "../deps.ts";
 import { Context } from "./context.ts";
 import { DenoDir } from "jsr:@deno/cache-dir@0.8.0";
+import { resolveNpmModule } from "./npm/cjs/resolve.ts";
 
 export async function npmResolve(
   module: ModuleEntryNpm,
@@ -21,6 +21,8 @@ export async function npmResolve(
   const subpath = module.specifier.slice(npmSpecifier.length);
   const packageSubpath = `.${subpath}` as const;
 
+  const resolve = resolveNpmModule;
+
   if (ctx.npm.type === "global") {
     const baseURL = join(
       toFileUrl(ctx.npm.denoDir),
@@ -29,37 +31,11 @@ export async function npmResolve(
     );
     const packageURL = join(baseURL, name, version);
 
-    if (await ctx.existDir(packageURL)) {
-      // 4. Let pjson be the result of READ_PACKAGE_JSON(packageURL).
-      const pjson = await readPackageJson(packageURL, ctx);
+    const result = await resolve(packageURL, packageSubpath, ctx);
 
-      // 5. If pjson is not null and pjson.exports is not null or undefined, then
-      if (
-        pjson !== null &&
-        (pjson.exports !== null && pjson.exports !== undefined)
-      ) {
-        // 1. Return the result of PACKAGE_EXPORTS_RESOLVE(packageURL, packageSubpath, pjson.exports, defaultConditions).
-        return packageExportsResolve(
-          packageURL,
-          packageSubpath,
-          pjson.exports,
-          ctx.conditions,
-          ctx,
-        );
+    if (result) return result;
 
-        // 6. Otherwise, if packageSubpath is equal to ".", then
-      } else if (packageSubpath === ".") {
-        // 1. If pjson.main is a string, then
-        if (pjson !== null && typeof pjson.main === "string") {
-          // 1. Return the URL resolution of main in packageURL.
-          return join(packageURL, pjson.main);
-        }
-      }
-
-      // 7. Otherwise,
-      // 1. Return the URL resolution of packageSubpath in packageURL.
-      return join(packageURL, packageSubpath);
-    }
+    throw new Error("Cannot find module");
   }
 
   if (ctx.npm.type === "local") {
@@ -74,41 +50,11 @@ export async function npmResolve(
       // 2. Set parentURL to the parent folder URL of parentURL.
       parentURL = getParentURL(parentURL);
 
-      // 3. If the folder at packageURL does not exist, then
-      if (!await ctx.existDir(packageURL)) {
-        // 1. Continue the next loop iteration.
-        continue;
-      }
+      const result = await resolve(packageURL, packageSubpath, ctx);
 
-      // 4. Let pjson be the result of READ_PACKAGE_JSON(packageURL).
-      const pjson = await readPackageJson(packageURL, ctx);
+      if (!result) continue;
 
-      // 5. If pjson is not null and pjson.exports is not null or undefined, then
-      if (
-        pjson !== null &&
-        (pjson.exports !== null && pjson.exports !== undefined)
-      ) {
-        // 1. Return the result of PACKAGE_EXPORTS_RESOLVE(packageURL, packageSubpath, pjson.exports, defaultConditions).
-        return packageExportsResolve(
-          packageURL,
-          packageSubpath,
-          pjson.exports,
-          ctx.conditions,
-          ctx,
-        );
-
-        // 6. Otherwise, if packageSubpath is equal to ".", then
-      } else if (packageSubpath === ".") {
-        // 1. If pjson.main is a string, then
-        if (pjson !== null && typeof pjson.main === "string") {
-          // 1. Return the URL resolution of main in packageURL.
-          return join(packageURL, pjson.main);
-        }
-      }
-
-      // 7. Otherwise,
-      // 1. Return the URL resolution of packageSubpath in packageURL.
-      return join(packageURL, packageSubpath);
+      return result;
     }
   }
 

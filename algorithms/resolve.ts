@@ -1,8 +1,11 @@
 import { type Context, type Info } from "./context.ts";
 import { MediaType } from "../modules/deno/info.ts";
 import { moduleResolve } from "./module_resolve.ts";
-import { esmFileFormat } from "../deps.ts";
+import { esmFileFormat, resolveAsDirectory, resolveAsFile } from "../deps.ts";
 import { urlResolve } from "./url_resolve.ts";
+import { toFileUrl } from "jsr:@std/path/to-file-url";
+import { fromFileUrl } from "jsr:@std/path";
+import { isBuiltin } from "node:module";
 
 interface ResolveResult {
   url: URL;
@@ -18,7 +21,7 @@ export async function resolve(
   // 1. Let resolved be undefined.
   let resolved: URL;
   let mediaType: MediaType | undefined;
-  let info: Info | undefined;
+  let info: Info | undefined = ctx.info;
 
   if (URL.canParse(specifier)) {
     const result = await urlResolve(specifier, ctx);
@@ -30,12 +33,49 @@ export async function resolve(
     ["/", "./", "../"].some((value) => specifier.startsWith(value))
   ) {
     if (ctx.info) {
-      if ("error" in ctx.info.module) {
-        throw new Error(ctx.info.module.error);
-      }
-
       if (ctx.info.module.kind !== "esm") {
-        resolved = new URL(specifier, referrerURL);
+        if (ctx.info.module.kind !== "npm") {
+          throw new Error();
+        }
+        if (ctx.module === "cjs") {
+          // a. LOAD_AS_FILE(Y + X)
+          const Y = new URL(specifier, referrerURL);
+          const context = {
+            conditions: ctx.conditions,
+            readFile: (path: string) => {
+              const url = toFileUrl(path);
+
+              return ctx.readFile(url);
+            },
+            existDir: (path: string) => {
+              const url = toFileUrl(path);
+
+              return ctx.existDir(url);
+            },
+            existFile: (path: string) => {
+              const url = toFileUrl(path);
+
+              return ctx.existFile(url);
+            },
+          };
+          const filePath = await resolveAsFile(fromFileUrl(Y), context);
+
+          if (typeof filePath === "string") {
+            resolved = toFileUrl(filePath);
+          } else {
+            // b. LOAD_AS_DIRECTORY(Y + X)
+            const dirPath = await resolveAsDirectory(fromFileUrl(Y), context);
+
+            if (typeof dirPath === "string") {
+              resolved = toFileUrl(dirPath);
+            } else {
+              // c. THROW "not found"
+              throw new Error(`Cannot find module '${specifier}'`);
+            }
+          }
+        } else {
+          resolved = new URL(specifier, referrerURL);
+        }
       } else {
         const deps = new Map(
           ctx.info.module.dependencies?.map((dep) => [dep.specifier, dep]),
@@ -55,6 +95,7 @@ export async function resolve(
         const module = modules.get(dependency.code.specifier);
 
         if (!module) throw new Error("Module not found");
+        if ("error" in module) throw new Error(module.error);
 
         const result = await moduleResolve(module, ctx.info.source, ctx);
 
@@ -63,7 +104,45 @@ export async function resolve(
         info = { module, source: ctx.info.source };
       }
     } else {
-      resolved = new URL(specifier, referrerURL);
+      if (ctx.module === "cjs") {
+        // a. LOAD_AS_FILE(Y + X)
+        const Y = new URL(specifier, referrerURL);
+        const context = {
+          conditions: ctx.conditions,
+          readFile: (path: string) => {
+            const url = toFileUrl(path);
+
+            return ctx.readFile(url);
+          },
+          existDir: (path: string) => {
+            const url = toFileUrl(path);
+
+            return ctx.existDir(url);
+          },
+          existFile: (path: string) => {
+            const url = toFileUrl(path);
+
+            return ctx.existFile(url);
+          },
+        };
+        const filePath = await resolveAsFile(fromFileUrl(Y), context);
+
+        if (typeof filePath === "string") {
+          resolved = toFileUrl(filePath);
+        } else {
+          // b. LOAD_AS_DIRECTORY(Y + X)
+          const dirPath = await resolveAsDirectory(fromFileUrl(Y), context);
+
+          if (typeof dirPath === "string") {
+            resolved = toFileUrl(dirPath);
+          } else {
+            // c. THROW "not found"
+            throw new Error(`Cannot find module '${specifier}'`);
+          }
+        }
+      } else {
+        resolved = new URL(specifier, referrerURL);
+      }
     }
   } else if (specifier.startsWith("#")) {
     throw new Error("imports field is not supported in npm module");
@@ -78,43 +157,111 @@ export async function resolve(
   else {
     // 1. Note: specifier is now a bare specifier.
     // 2. Set resolved the result of PACKAGE_RESOLVE(specifier, parentURL).
-    const result = await urlResolve(`npm:/${specifier}`, ctx);
-    resolved = result.url;
-    mediaType = result.mediaType;
-    info = result.info;
-  }
+    if (isBuiltin(specifier)) {
+      resolved = new URL(`node:${specifier}`);
+    } else {
+      if (!ctx.info) throw new Error("f");
 
-  const realURL = resolved.protocol === "file:"
-    ? await ctx.realUrl(resolved) ?? resolved
-    : resolved;
+      if (ctx.info.module.kind !== "npm") throw new Error();
 
-  if (!mediaType) {
-    const format = await esmFileFormat(realURL, ctx);
+      const npm = ctx.info.source.npmPackages[ctx.info.module.npmPackage];
 
-    if (format) {
-      switch (format) {
-        case "module": {
-          mediaType = "Mjs";
-          break;
-        }
+      if (!npm) throw new Error();
 
-        case "commonjs": {
-          mediaType = "Cjs";
-          break;
-        }
-        case "json": {
-          mediaType = "Json";
-          break;
-        }
-        case "wasm": {
-          mediaType = "Wasm";
-          break;
+      const { name, subpath } = parseNpmPkg(specifier);
+
+      let pkg: string;
+      if (npm.name === name) {
+        pkg = `npm:/${npm.name}@${npm.version}${subpath.slice(1)}`;
+      } else {
+        const depsMap = new Map<string, string>(
+          npm.dependencies.map((nameWithVersion) => {
+            const name = extractName(nameWithVersion);
+            return [name, nameWithVersion];
+          }),
+        );
+
+        const nameWithVer = depsMap.get(name);
+
+        if (!nameWithVer) {
+          console.log("no name with version", specifier);
+
+          pkg = `npm:/${specifier}${subpath.slice(1)}`;
+        } else {
+          const dep = ctx.info.source.npmPackages[nameWithVer];
+
+          pkg = `npm:/${dep.name}@${dep.version}${subpath.slice(1)}`;
         }
       }
-    } else {
-      mediaType = "Unknown";
+
+      const result = await urlResolve(pkg, ctx);
+      resolved = result.url;
+      mediaType = result.mediaType;
+      info = result.info;
     }
   }
 
-  return { url: realURL, info, mediaType };
+  let realURL = resolved;
+
+  if (resolved.protocol === "file:") {
+    realURL = await ctx.realUrl(resolved);
+
+    if (!mediaType) {
+      const format = await esmFileFormat(realURL, ctx);
+
+      if (format) {
+        switch (format) {
+          case "module": {
+            mediaType = "Mjs";
+            break;
+          }
+
+          case "commonjs": {
+            mediaType = "Cjs";
+            break;
+          }
+          case "json": {
+            mediaType = "Json";
+            break;
+          }
+          case "wasm": {
+            mediaType = "Wasm";
+            break;
+          }
+        }
+      } else {
+        mediaType = "Unknown";
+      }
+    }
+  }
+
+  return { url: realURL, info, mediaType: mediaType ?? "Unknown" };
+}
+
+function parseNpmPkg(specifier: string) {
+  const index = specifier.startsWith("@")
+    ? secondIndexOf(specifier, "/")
+    : specifier.indexOf("/");
+
+  const name = index === -1 ? specifier : specifier.slice(0, index);
+
+  return {
+    name,
+    subpath: `.${specifier.slice(name.length)}`,
+  };
+}
+
+export function secondIndexOf(input: string, searchString: string): number {
+  const firstIndex = input.indexOf(searchString);
+
+  if (firstIndex === -1) return -1;
+
+  return input.indexOf(searchString, firstIndex + 1);
+}
+
+function extractName(input: string): string {
+  const at = input.startsWith("@")
+    ? secondIndexOf(input, "@")
+    : input.indexOf("@");
+  return at === -1 ? input : input.slice(0, at);
 }

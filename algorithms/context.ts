@@ -1,4 +1,8 @@
-import { ModuleEntry, SourceFileInfo } from "../modules/deno/info.ts";
+import {
+  ModuleEntry,
+  ModuleEntryError,
+  SourceFileInfo,
+} from "../modules/deno/info.ts";
 
 export interface Context {
   readFile(url: URL): Promise<string | null>;
@@ -7,14 +11,23 @@ export interface Context {
   existFile(url: URL): Promise<boolean>;
   realUrl(url: URL): Promise<URL>;
 
+  getInfo(specifier: string): Promise<SourceFileInfo>;
+
   info?: Info;
   npm?: NpmOptions;
+
+  /**
+   * @default esm
+   */
+  module?: "esm" | "cjs";
 }
 
 export interface Info {
   source: SourceFileInfo;
-  module: ModuleEntry;
+  module: ValidModule;
 }
+
+export type ValidModule = Exclude<ModuleEntry, ModuleEntryError>;
 
 interface NpmGlobalOptions {
   type: "global";
