@@ -1,9 +1,9 @@
 /**
  * @throws {Error}
  */
-export async function info(): Promise<CacheInfo>;
+export async function info(): Promise<Output>;
 export async function info(file: string): Promise<SourceFileInfo>;
-export async function info(file?: string): Promise<CacheInfo | SourceFileInfo> {
+export async function info(file?: string): Promise<Output | SourceFileInfo> {
   const options = {
     args: ["info", "--json"],
     env: { "DENO_NO_PACKAGE_JSON": "true" },
@@ -23,7 +23,7 @@ export async function info(file?: string): Promise<CacheInfo | SourceFileInfo> {
   return JSON.parse(txt);
 }
 
-export interface CacheInfo {
+export interface Output {
   denoDir: string;
   modulesCache: string;
   npmCache: string;
@@ -51,6 +51,7 @@ export type ModuleEntry =
   | ModuleEntryEsm
   | ModuleEntryJson
   | ModuleEntryNpm
+  | ModuleEntryAsserted
   | ModuleEntryNode;
 
 export interface ModuleEntryBase {
@@ -80,14 +81,17 @@ export type MediaType =
   | "SourceMap"
   | "Unknown";
 
-export interface ModuleEntryEsm extends ModuleEntryBase {
+export interface ModuleEntryEsm extends ModuleEntryBase, CacheInfo {
   kind: "esm";
   dependencies?: Dependency[];
-  local: string | null;
-  emit: string | null;
-  map: string | null;
   mediaType: MediaType;
   size: number;
+}
+
+export interface ModuleEntryAsserted extends ModuleEntryBase, CacheInfo {
+  kind: "asserted";
+  size: number;
+  mediaType: MediaType;
 }
 
 export interface Dependency {
@@ -115,11 +119,16 @@ export interface LineChar {
   character: number;
 }
 
-export interface ModuleEntryJson extends ModuleEntryBase {
-  kind: "asserted" | "json";
-  local: string | null;
+export interface ModuleEntryJson extends ModuleEntryBase, CacheInfo {
+  kind: "json";
   mediaType: MediaType;
   size: number;
+}
+
+export interface CacheInfo {
+  local?: string | null;
+  emit?: string | null;
+  map?: string | null;
 }
 
 export interface ModuleEntryNpm extends ModuleEntryBase {

@@ -1,13 +1,19 @@
-import { MediaType, SourceFileInfo } from "../modules/deno/info.ts";
 import { esmResolve } from "./esm_resolve.ts";
 import { npmResolve } from "./npm_resolve.ts";
+import { jsonResolve } from "./json_resolve.ts";
+import type { MediaType, SourceFileInfo } from "../deps.ts";
 import { type Context, type ValidModule } from "./context.ts";
+
+export interface ModuleResolveResult {
+  url: URL;
+  mediaType?: MediaType;
+}
 
 export async function moduleResolve(
   module: ValidModule,
   source: SourceFileInfo,
   ctx: Context,
-): Promise<{ url: URL; mediaType?: MediaType }> {
+): Promise<ModuleResolveResult> {
   switch (module.kind) {
     case "esm": {
       return esmResolve(module);
@@ -19,10 +25,13 @@ export async function moduleResolve(
       return { url };
     }
 
-    case "asserted":
-    case "json":
     case "node": {
-      throw new Error("not supported");
+      return { url: new URL(module.specifier) };
+    }
+
+    case "asserted":
+    case "json": {
+      return jsonResolve(module);
     }
   }
 }

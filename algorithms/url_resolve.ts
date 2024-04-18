@@ -15,6 +15,9 @@ export interface URLResolveResult {
   };
 }
 
+/**
+ * @throws {Error}
+ */
 export async function urlResolve(
   specifier: URL | string,
   ctx: Context,
@@ -25,7 +28,9 @@ export async function urlResolve(
     case "jsr:":
     case "https:":
     case "http:":
-    case "npm:": {
+    case "npm:":
+    case "node:":
+    case "file:": {
       const specifier = url.toString();
       const sourceFile = await ctx.getInfo(specifier);
       const redirects = new Map<string, string>(
@@ -53,8 +58,6 @@ export async function urlResolve(
       };
     }
 
-    case "node:":
-    case "file:":
     case "data:": {
       return { url };
     }
