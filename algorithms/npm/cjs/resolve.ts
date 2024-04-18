@@ -1,4 +1,4 @@
-import { Context } from "../../context.ts";
+import { Context } from "../../types.ts";
 import { join } from "jsr:@std/url";
 import { fromFileUrl, toFileUrl } from "jsr:@std/path";
 import { packageExportsResolve, readPackageJson } from "./deps.ts";

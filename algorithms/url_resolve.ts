@@ -1,5 +1,5 @@
 import { moduleResolve } from "./module_resolve.ts";
-import { type Context, type Info } from "./context.ts";
+import { type Context, type Info } from "./types.ts";
 import { type MediaType, type ModuleEntry } from "../deps.ts";
 
 export interface URLResolveResult {

@@ -1,4 +1,4 @@
-import { type Context, type Info } from "./context.ts";
+import { type Context, type Info } from "./types.ts";
 import { MediaType } from "../modules/deno/info.ts";
 import { moduleResolve } from "./module_resolve.ts";
 import { esmFileFormat, resolveAsDirectory, resolveAsFile } from "../deps.ts";

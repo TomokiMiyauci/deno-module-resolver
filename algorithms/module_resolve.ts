@@ -2,7 +2,7 @@ import { esmResolve } from "./esm_resolve.ts";
 import { npmResolve } from "./npm_resolve.ts";
 import { jsonResolve } from "./json_resolve.ts";
 import type { MediaType, Module, SourceFileInfo } from "../deps.ts";
-import { type Context } from "./context.ts";
+import { type Context } from "./types.ts";
 
 export interface ModuleResolveResult {
   url: URL;

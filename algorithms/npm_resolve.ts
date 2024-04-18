@@ -1,7 +1,7 @@
 import { NpmModule, SourceFileInfo } from "../deps.ts";
 import { toFileUrl } from "jsr:@std/path";
 import { join, normalize } from "jsr:@std/url";
-import { Context } from "./context.ts";
+import { Context } from "./types.ts";
 import { DenoDir } from "jsr:@deno/cache-dir@0.8.0";
 import { resolveNpmModule } from "./npm/cjs/resolve.ts";
 
