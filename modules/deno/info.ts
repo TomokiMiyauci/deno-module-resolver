@@ -47,18 +47,21 @@ export interface NpmPackage {
 }
 
 export type ModuleEntry =
-  | ModuleEntryError
-  | ModuleEntryEsm
-  | ModuleEntryJson
-  | ModuleEntryNpm
-  | ModuleEntryAsserted
-  | ModuleEntryNode;
+  | ErrorEntry
+  | Module;
 
-export interface ModuleEntryBase {
+export type Module =
+  | EsmModule
+  | JsonModule
+  | NpmModule
+  | AssertedModule
+  | NodeModule;
+
+interface BaseEntry {
   specifier: string;
 }
 
-export interface ModuleEntryError extends ModuleEntryBase {
+export interface ErrorEntry extends BaseEntry {
   error: string;
 }
 
@@ -81,14 +84,14 @@ export type MediaType =
   | "SourceMap"
   | "Unknown";
 
-export interface ModuleEntryEsm extends ModuleEntryBase, CacheInfo {
+export interface EsmModule extends BaseEntry, CacheInfo {
   kind: "esm";
   dependencies?: Dependency[];
   mediaType: MediaType;
   size: number;
 }
 
-export interface ModuleEntryAsserted extends ModuleEntryBase, CacheInfo {
+export interface AssertedModule extends BaseEntry, CacheInfo {
   kind: "asserted";
   size: number;
   mediaType: MediaType;
@@ -119,7 +122,7 @@ export interface LineChar {
   character: number;
 }
 
-export interface ModuleEntryJson extends ModuleEntryBase, CacheInfo {
+export interface JsonModule extends BaseEntry, CacheInfo {
   kind: "json";
   mediaType: MediaType;
   size: number;
@@ -131,12 +134,12 @@ export interface CacheInfo {
   map?: string | null;
 }
 
-export interface ModuleEntryNpm extends ModuleEntryBase {
+export interface NpmModule extends BaseEntry {
   kind: "npm";
   npmPackage: string;
 }
 
-export interface ModuleEntryNode extends ModuleEntryBase {
+export interface NodeModule extends BaseEntry {
   kind: "node";
   moduleName: string;
 }

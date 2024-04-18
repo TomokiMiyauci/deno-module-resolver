@@ -1,18 +1,11 @@
 import { moduleResolve } from "./module_resolve.ts";
-import { type Context, type ValidModule } from "./context.ts";
-import {
-  type MediaType,
-  type ModuleEntry,
-  type SourceFileInfo,
-} from "../deps.ts";
+import { type Context, type Info } from "./context.ts";
+import { type MediaType, type ModuleEntry } from "../deps.ts";
 
 export interface URLResolveResult {
   url: URL;
   mediaType?: MediaType;
-  info?: {
-    module: ValidModule;
-    source: SourceFileInfo;
-  };
+  info?: Info;
 }
 
 /**

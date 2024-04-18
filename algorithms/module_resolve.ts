@@ -1,8 +1,8 @@
 import { esmResolve } from "./esm_resolve.ts";
 import { npmResolve } from "./npm_resolve.ts";
 import { jsonResolve } from "./json_resolve.ts";
-import type { MediaType, SourceFileInfo } from "../deps.ts";
-import { type Context, type ValidModule } from "./context.ts";
+import type { MediaType, Module, SourceFileInfo } from "../deps.ts";
+import { type Context } from "./context.ts";
 
 export interface ModuleResolveResult {
   url: URL;
@@ -10,7 +10,7 @@ export interface ModuleResolveResult {
 }
 
 export async function moduleResolve(
-  module: ValidModule,
+  module: Module,
   source: SourceFileInfo,
   ctx: Context,
 ): Promise<ModuleResolveResult> {

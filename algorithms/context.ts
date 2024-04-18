@@ -1,8 +1,4 @@
-import {
-  ModuleEntry,
-  ModuleEntryError,
-  SourceFileInfo,
-} from "../modules/deno/info.ts";
+import { Module, SourceFileInfo } from "../deps.ts";
 
 export interface Context {
   readFile(url: URL): Promise<string | null>;
@@ -24,10 +20,8 @@ export interface Context {
 
 export interface Info {
   source: SourceFileInfo;
-  module: ValidModule;
+  module: Module;
 }
-
-export type ValidModule = Exclude<ModuleEntry, ModuleEntryError>;
 
 interface NpmGlobalOptions {
   type: "global";

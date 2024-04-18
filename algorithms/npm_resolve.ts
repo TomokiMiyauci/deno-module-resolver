@@ -1,4 +1,4 @@
-import { ModuleEntryNpm, SourceFileInfo } from "../modules/deno/info.ts";
+import { NpmModule, SourceFileInfo } from "../deps.ts";
 import { toFileUrl } from "jsr:@std/path";
 import { join, normalize } from "jsr:@std/url";
 import { Context } from "./context.ts";
@@ -6,7 +6,7 @@ import { DenoDir } from "jsr:@deno/cache-dir@0.8.0";
 import { resolveNpmModule } from "./npm/cjs/resolve.ts";
 
 export async function npmResolve(
-  module: ModuleEntryNpm,
+  module: NpmModule,
   source: SourceFileInfo,
   ctx: Context,
 ): Promise<URL> {
