@@ -4,7 +4,7 @@ import { type MediaType, type ModuleEntry } from "../deps.ts";
 
 export interface URLResolveResult {
   url: URL;
-  mediaType?: MediaType;
+  mediaType: MediaType;
   info?: Info;
 }
 
@@ -23,7 +23,8 @@ export async function urlResolve(
     case "http:":
     case "npm:":
     case "node:":
-    case "file:": {
+    case "file:":
+    case "data:": {
       const specifier = url.toString();
       const sourceFile = await ctx.getInfo(specifier);
       const redirects = new Map<string, string>(
@@ -49,10 +50,6 @@ export async function urlResolve(
         mediaType: result.mediaType,
         info: { module, source: sourceFile },
       };
-    }
-
-    case "data:": {
-      return { url };
     }
 
     default: {

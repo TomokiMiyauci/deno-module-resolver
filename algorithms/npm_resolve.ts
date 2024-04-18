@@ -1,19 +1,22 @@
 import {
   DenoDir,
+  esmFileFormat,
+  type Format,
   join,
   normalize,
   NpmModule,
   SourceFileInfo,
   toFileUrl,
 } from "../deps.ts";
-import { Context } from "./types.ts";
+import type { Context, ResolveResult } from "./types.ts";
 import { resolveNpmModule } from "./npm/cjs/resolve.ts";
+import { MediaType } from "../deps.ts";
 
 export async function npmResolve(
   module: NpmModule,
   source: SourceFileInfo,
   ctx: Context,
-): Promise<URL> {
+): Promise<ResolveResult> {
   ctx.npm ??= { type: "global", denoDir: new DenoDir().root };
 
   const npm = source.npmPackages[module.npmPackage];
@@ -28,18 +31,18 @@ export async function npmResolve(
   const resolve = resolveNpmModule;
 
   if (ctx.npm.type === "global") {
-    const baseURL = join(
-      toFileUrl(ctx.npm.denoDir),
-      "npm",
-      "registry.npmjs.org",
-    );
-    const packageURL = join(baseURL, name, version);
+    const packageURL = createPackageURL(ctx.npm.denoDir, name, version);
 
-    const result = await resolve(packageURL, packageSubpath, ctx);
+    const url = await resolve(packageURL, packageSubpath, ctx);
 
-    if (result) return result;
+    if (!url) {
+      throw new Error("Cannot find module");
+    }
 
-    throw new Error("Cannot find module");
+    const format = await esmFileFormat(url, ctx);
+    const mediaType = (format && formatToMediaType(format)) ?? "Unknown";
+
+    return { url, mediaType };
   }
 
   if (ctx.npm.type === "local") {
@@ -48,17 +51,19 @@ export async function npmResolve(
     // 11. While parentURL is not the file system root,
     while (!isFileSystemRoot(parentURL)) {
       // 1. Let packageURL be the URL resolution of "node_modules/" concatenated with packageSpecifier, relative to parentURL.
-      // @remarks: Maybe not `packageSpecifier`, but packageName
       const packageURL = new URL("node_modules/" + name, parentURL);
 
       // 2. Set parentURL to the parent folder URL of parentURL.
       parentURL = getParentURL(parentURL);
 
-      const result = await resolve(packageURL, packageSubpath, ctx);
+      const url = await resolve(packageURL, packageSubpath, ctx);
 
-      if (!result) continue;
+      if (!url) continue;
 
-      return result;
+      const format = await esmFileFormat(url, ctx);
+      const mediaType = (format && formatToMediaType(format)) ?? "Unknown";
+
+      return { url, mediaType };
     }
   }
 
@@ -70,5 +75,34 @@ export function isFileSystemRoot(url: URL | string): boolean {
 }
 
 export function getParentURL(url: URL | string): URL {
-  return normalize(join(url, "..", "/"));
+  return normalize(join(url, ".."));
+}
+
+function createPackageURL(
+  denoDir: string,
+  name: string,
+  version: string,
+): URL {
+  const denoDirURL = toFileUrl(denoDir);
+  const baseURL = join(denoDirURL, "npm", "registry.npmjs.org");
+
+  const packageURL = join(baseURL, name, version);
+
+  return packageURL;
+}
+
+function formatToMediaType(format: Format): MediaType {
+  switch (format) {
+    case "module":
+      return "JavaScript";
+
+    case "commonjs":
+      return "Cjs";
+
+    case "json":
+      return "Json";
+
+    case "wasm":
+      return "Wasm";
+  }
 }

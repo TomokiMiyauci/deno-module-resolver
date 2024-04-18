@@ -1,7 +1,7 @@
 import { type Context, type Info } from "./types.ts";
 import { moduleResolve } from "./module_resolve.ts";
 import {
-  esmFileFormat,
+  extname,
   fromFileUrl,
   isBuiltin,
   type MediaType,
@@ -211,31 +211,7 @@ export async function resolve(
     realURL = await ctx.realUrl(resolved);
 
     if (!mediaType) {
-      const format = await esmFileFormat(realURL, ctx);
-
-      if (format) {
-        switch (format) {
-          case "module": {
-            mediaType = "Mjs";
-            break;
-          }
-
-          case "commonjs": {
-            mediaType = "Cjs";
-            break;
-          }
-          case "json": {
-            mediaType = "Json";
-            break;
-          }
-          case "wasm": {
-            mediaType = "Wasm";
-            break;
-          }
-        }
-      } else {
-        mediaType = "Unknown";
-      }
+      mediaType = mediaTypeFromExt(realURL);
     }
   }
 
@@ -268,4 +244,42 @@ function extractName(input: string): string {
     ? secondIndexOf(input, "@")
     : input.indexOf("@");
   return at === -1 ? input : input.slice(0, at);
+}
+
+function mediaTypeFromExt(url: URL): MediaType {
+  const ext = extname(url);
+
+  switch (ext) {
+    case ".js":
+      return "JavaScript";
+    case ".ts":
+      return "TypeScript";
+
+    case ".tsx":
+      return "TSX";
+
+    case ".jsx":
+      return "JSX";
+
+    case ".mjs":
+      return "Mjs";
+
+    case ".cjs":
+      return "Cjs";
+
+    case ".json":
+      return "Json";
+
+    case ".wasm":
+      return "Wasm";
+
+    case ".tsbuildinfo":
+      return "TsBuildInfo";
+
+    case ".map":
+      return "SourceMap";
+
+    default:
+      return "Unknown";
+  }
 }

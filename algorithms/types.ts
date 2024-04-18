@@ -1,4 +1,4 @@
-import { Module, SourceFileInfo } from "../deps.ts";
+import { MediaType, Module, SourceFileInfo } from "../deps.ts";
 
 export interface Context {
   readFile(url: URL): Promise<string | null>;
@@ -34,3 +34,8 @@ interface NpmLocalOptions {
 }
 
 export type NpmOptions = NpmGlobalOptions | NpmLocalOptions;
+
+export interface ResolveResult {
+  url: URL;
+  mediaType: MediaType;
+}

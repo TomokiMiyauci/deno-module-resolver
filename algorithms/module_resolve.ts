@@ -1,32 +1,27 @@
 import { esmResolve } from "./esm_resolve.ts";
 import { npmResolve } from "./npm_resolve.ts";
 import { jsonResolve } from "./json_resolve.ts";
-import type { MediaType, Module, SourceFileInfo } from "../deps.ts";
-import { type Context } from "./types.ts";
-
-export interface ModuleResolveResult {
-  url: URL;
-  mediaType?: MediaType;
-}
+import type { Module, SourceFileInfo } from "../deps.ts";
+import { type Context, ResolveResult } from "./types.ts";
 
 export async function moduleResolve(
   module: Module,
   source: SourceFileInfo,
   ctx: Context,
-): Promise<ModuleResolveResult> {
+): Promise<ResolveResult> {
   switch (module.kind) {
     case "esm": {
       return esmResolve(module);
     }
 
     case "npm": {
-      const url = await npmResolve(module, source, ctx);
+      const result = await npmResolve(module, source, ctx);
 
-      return { url };
+      return result;
     }
 
     case "node": {
-      return { url: new URL(module.specifier) };
+      return { url: new URL(module.specifier), mediaType: "Unknown" };
     }
 
     case "asserted":
