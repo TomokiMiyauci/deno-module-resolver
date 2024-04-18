@@ -1,11 +1,15 @@
 import { type Context, type Info } from "./types.ts";
-import { MediaType } from "../modules/deno/info.ts";
 import { moduleResolve } from "./module_resolve.ts";
-import { esmFileFormat, resolveAsDirectory, resolveAsFile } from "../deps.ts";
+import {
+  esmFileFormat,
+  fromFileUrl,
+  isBuiltin,
+  type MediaType,
+  resolveAsDirectory,
+  resolveAsFile,
+  toFileUrl,
+} from "../deps.ts";
 import { urlResolve } from "./url_resolve.ts";
-import { toFileUrl } from "jsr:@std/path/to-file-url";
-import { fromFileUrl } from "jsr:@std/path";
-import { isBuiltin } from "node:module";
 
 interface ResolveResult {
   url: URL;

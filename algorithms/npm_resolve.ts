@@ -1,8 +1,12 @@
-import { NpmModule, SourceFileInfo } from "../deps.ts";
-import { toFileUrl } from "jsr:@std/path";
-import { join, normalize } from "jsr:@std/url";
+import {
+  DenoDir,
+  join,
+  normalize,
+  NpmModule,
+  SourceFileInfo,
+  toFileUrl,
+} from "../deps.ts";
 import { Context } from "./types.ts";
-import { DenoDir } from "jsr:@deno/cache-dir@0.8.0";
 import { resolveNpmModule } from "./npm/cjs/resolve.ts";
 
 export async function npmResolve(
