@@ -1,8 +1,24 @@
 import { moduleResolve } from "./module_resolve.ts";
-import { ModuleEntry } from "../modules/deno/info.ts";
-import { type Context } from "./context.ts";
+import { type Context, type ValidModule } from "./context.ts";
+import {
+  type MediaType,
+  type ModuleEntry,
+  type SourceFileInfo,
+} from "../deps.ts";
 
-export async function urlResolve(specifier: URL | string, ctx: Context) {
+export interface URLResolveResult {
+  url: URL;
+  mediaType?: MediaType;
+  info?: {
+    module: ValidModule;
+    source: SourceFileInfo;
+  };
+}
+
+export async function urlResolve(
+  specifier: URL | string,
+  ctx: Context,
+): Promise<URLResolveResult> {
   const url = new URL(specifier);
 
   switch (url.protocol) {
@@ -33,10 +49,7 @@ export async function urlResolve(specifier: URL | string, ctx: Context) {
       return {
         url: result.url,
         mediaType: result.mediaType,
-        info: {
-          source: sourceFile,
-          module,
-        },
+        info: { module, source: sourceFile },
       };
     }
 
@@ -47,7 +60,18 @@ export async function urlResolve(specifier: URL | string, ctx: Context) {
     }
 
     default: {
-      throw new Error("Unknown");
+      const scheme = url.protocol.slice(0, url.protocol.length - 1);
+      throw new Error(
+        `Unsupported scheme "${scheme}" for module "${url}". Supported schemes: [
+        "data",
+        // "blob",
+        "file",
+        "http",
+        "https",
+        "jsr",
+        "npm"
+    ]`,
+      );
     }
   }
 }
