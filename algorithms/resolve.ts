@@ -3,13 +3,13 @@ import { moduleResolve } from "./module_resolve.ts";
 import {
   extname,
   fromFileUrl,
-  isBuiltin,
   type MediaType,
   resolveAsDirectory,
   resolveAsFile,
   toFileUrl,
 } from "../deps.ts";
 import { urlResolve } from "./url_resolve.ts";
+import { packageResolve } from "./package_resolve.ts";
 
 interface ResolveResult {
   url: URL;
@@ -161,45 +161,14 @@ export async function resolve(
   else {
     // 1. Note: specifier is now a bare specifier.
     // 2. Set resolved the result of PACKAGE_RESOLVE(specifier, parentURL).
-    if (isBuiltin(specifier)) {
-      resolved = new URL(`node:${specifier}`);
-    } else {
-      if (!ctx.info) throw new Error("f");
 
-      if (ctx.info.module.kind !== "npm") throw new Error();
+    if (!ctx.info) throw new Error("outside of package");
 
-      const npm = ctx.info.source.npmPackages[ctx.info.module.npmPackage];
+    const result = await packageResolve(specifier, { ...ctx, info: ctx.info });
 
-      if (!npm) throw new Error();
+    resolved = result.url;
 
-      const { name, subpath } = parseNpmPkg(specifier);
-
-      let pkg: string;
-      if (npm.name === name) {
-        pkg = `npm:/${npm.name}@${npm.version}${subpath.slice(1)}`;
-      } else {
-        const depsMap = new Map<string, string>(
-          npm.dependencies.map((nameWithVersion) => {
-            const name = extractName(nameWithVersion);
-            return [name, nameWithVersion];
-          }),
-        );
-
-        const nameWithVer = depsMap.get(name);
-
-        if (!nameWithVer) {
-          console.log("no name with version", specifier);
-
-          pkg = `npm:/${specifier}${subpath.slice(1)}`;
-        } else {
-          const dep = ctx.info.source.npmPackages[nameWithVer];
-
-          pkg = `npm:/${dep.name}@${dep.version}${subpath.slice(1)}`;
-        }
-      }
-
-      const result = await urlResolve(pkg, ctx);
-      resolved = result.url;
+    if ("mediaType" in result) {
       mediaType = result.mediaType;
       info = result.info;
     }
@@ -216,34 +185,6 @@ export async function resolve(
   }
 
   return { url: realURL, info, mediaType: mediaType ?? "Unknown" };
-}
-
-function parseNpmPkg(specifier: string) {
-  const index = specifier.startsWith("@")
-    ? secondIndexOf(specifier, "/")
-    : specifier.indexOf("/");
-
-  const name = index === -1 ? specifier : specifier.slice(0, index);
-
-  return {
-    name,
-    subpath: `.${specifier.slice(name.length)}`,
-  };
-}
-
-export function secondIndexOf(input: string, searchString: string): number {
-  const firstIndex = input.indexOf(searchString);
-
-  if (firstIndex === -1) return -1;
-
-  return input.indexOf(searchString, firstIndex + 1);
-}
-
-function extractName(input: string): string {
-  const at = input.startsWith("@")
-    ? secondIndexOf(input, "@")
-    : input.indexOf("@");
-  return at === -1 ? input : input.slice(0, at);
 }
 
 function mediaTypeFromExt(url: URL): MediaType {
