@@ -39,3 +39,7 @@ export interface ResolveResult {
   url: URL;
   mediaType: MediaType;
 }
+
+export interface ModuleResolveResult extends ResolveResult {
+  info: Info;
+}

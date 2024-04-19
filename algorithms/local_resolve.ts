@@ -1,4 +1,8 @@
-import { type Context, type ResolveResult } from "./types.ts";
+import {
+  type Context,
+  type ModuleResolveResult,
+  type ResolveResult,
+} from "./types.ts";
 import { moduleResolve } from "./module_resolve.ts";
 import {
   fromFileUrl,
@@ -28,7 +32,7 @@ export async function localResolve(
   specifier: string,
   referrerURL: URL | string,
   ctx: Context,
-): Promise<ResolveResult> {
+): Promise<ResolveResult | ModuleResolveResult> {
   if (!ctx.info) {
     return localRelativeResolve(specifier, referrerURL, ctx);
   }
@@ -56,7 +60,14 @@ export async function localResolve(
 
     const result = await moduleResolve(module, ctx.info.source, ctx);
 
-    return { url: result.url, mediaType: result.mediaType };
+    return {
+      url: result.url,
+      mediaType: result.mediaType,
+      info: {
+        module,
+        source: ctx.info.source,
+      },
+    };
   }
 
   if (ctx.module === "cjs") {

@@ -17,7 +17,7 @@ export async function resolve(
 ): Promise<ResolveResult> {
   // 1. Let resolved be undefined.
   let resolved: URL;
-  let mediaType: MediaType | undefined;
+  let mediaType: MediaType;
   let info: Info | undefined = ctx.info;
 
   if (URL.canParse(specifier)) {
@@ -33,6 +33,7 @@ export async function resolve(
 
     resolved = result.url;
     mediaType = result.mediaType;
+    if ("info" in result) info = result.info;
   } else if (specifier.startsWith("#")) {
     throw new Error("imports field is not supported in npm module");
     // 1. Set resolved to the result of PACKAGE_IMPORTS_RESOLVE(specifier, parentURL, defaultConditions).

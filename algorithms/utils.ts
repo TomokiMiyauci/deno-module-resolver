@@ -6,6 +6,7 @@ export function mediaTypeFromExt(url: URL): MediaType {
   switch (ext) {
     case ".js":
       return "JavaScript";
+
     case ".ts":
       return "TypeScript";
 

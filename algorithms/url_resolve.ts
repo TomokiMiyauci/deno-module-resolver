@@ -1,10 +1,6 @@
 import { moduleResolve } from "./module_resolve.ts";
-import { type Context, type Info, type ResolveResult } from "./types.ts";
+import { type Context, type ModuleResolveResult } from "./types.ts";
 import { type ModuleEntry } from "../deps.ts";
-
-export interface URLResolveResult extends ResolveResult {
-  info: Info;
-}
 
 /**
  * @throws {Error}
@@ -12,7 +8,7 @@ export interface URLResolveResult extends ResolveResult {
 export async function urlResolve(
   specifier: URL | string,
   ctx: Context,
-): Promise<URLResolveResult> {
+): Promise<ModuleResolveResult> {
   const url = new URL(specifier);
 
   switch (url.protocol) {
