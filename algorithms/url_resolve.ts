@@ -1,11 +1,9 @@
 import { moduleResolve } from "./module_resolve.ts";
-import { type Context, type Info } from "./types.ts";
-import { type MediaType, type ModuleEntry } from "../deps.ts";
+import { type Context, type Info, type ResolveResult } from "./types.ts";
+import { type ModuleEntry } from "../deps.ts";
 
-export interface URLResolveResult {
-  url: URL;
-  mediaType: MediaType;
-  info?: Info;
+export interface URLResolveResult extends ResolveResult {
+  info: Info;
 }
 
 /**
@@ -54,6 +52,7 @@ export async function urlResolve(
 
     default: {
       const scheme = url.protocol.slice(0, url.protocol.length - 1);
+
       throw new Error(
         `Unsupported scheme "${scheme}" for module "${url}". Supported schemes: [
         "data",

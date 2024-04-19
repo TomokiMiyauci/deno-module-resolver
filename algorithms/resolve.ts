@@ -3,7 +3,6 @@ import { type MediaType } from "../deps.ts";
 import { urlResolve } from "./url_resolve.ts";
 import { packageResolve } from "./package_resolve.ts";
 import { localResolve } from "./local_resolve.ts";
-import { mediaTypeFromExt } from "./utils.ts";
 
 interface ResolveResult {
   url: URL;
@@ -25,8 +24,8 @@ export async function resolve(
     const result = await urlResolve(specifier, ctx);
 
     resolved = result.url;
-    info = result.info;
     mediaType = result.mediaType;
+    info = result.info;
   } else if (
     ["/", "./", "../"].some((value) => specifier.startsWith(value))
   ) {
@@ -53,22 +52,14 @@ export async function resolve(
     const result = await packageResolve(specifier, { ...ctx, info: ctx.info });
 
     resolved = result.url;
+    mediaType = result.mediaType;
 
-    if ("mediaType" in result) {
-      mediaType = result.mediaType;
-      info = result.info;
-    }
+    if ("info" in result) info = result.info;
   }
 
-  let realURL = resolved;
+  const realURL = resolved.protocol === "file:"
+    ? await ctx.realUrl(resolved) ?? resolved
+    : resolved;
 
-  if (resolved.protocol === "file:") {
-    realURL = await ctx.realUrl(resolved);
-
-    if (!mediaType) {
-      mediaType = mediaTypeFromExt(realURL);
-    }
-  }
-
-  return { url: realURL, info, mediaType: mediaType ?? "Unknown" };
+  return { url: realURL, info, mediaType };
 }

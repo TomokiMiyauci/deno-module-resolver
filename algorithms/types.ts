@@ -5,7 +5,7 @@ export interface Context {
   conditions: Iterable<string>;
   existDir(url: URL): Promise<boolean>;
   existFile(url: URL): Promise<boolean>;
-  realUrl(url: URL): Promise<URL>;
+  realUrl(url: URL): Promise<URL | null | undefined> | URL | null | undefined;
 
   getInfo(specifier: string): Promise<SourceFileInfo>;
 

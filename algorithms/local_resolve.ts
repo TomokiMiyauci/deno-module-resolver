@@ -6,17 +6,22 @@ import {
   resolveAsFile,
   toFileUrl,
 } from "../deps.ts";
-import { urlResolve } from "./url_resolve.ts";
 import { mediaTypeFromExt } from "./utils.ts";
 
-function localRelativeResolve(
+async function localRelativeResolve(
   specifier: string,
   referer: URL | string,
   ctx: Context,
-) {
+): Promise<ResolveResult> {
   const url = new URL(specifier, referer);
 
-  return urlResolve(url, ctx);
+  if (await ctx.existFile(url)) {
+    const mediaType = mediaTypeFromExt(url);
+
+    return { url, mediaType };
+  }
+
+  throw new Error("Module not found");
 }
 
 export async function localResolve(
@@ -58,10 +63,7 @@ export async function localResolve(
     return localCjsResolve(specifier, referrerURL, ctx);
   }
 
-  const url = new URL(specifier, referrerURL);
-  const mediaType = mediaTypeFromExt(url);
-
-  return { url, mediaType };
+  return localRelativeResolve(specifier, referrerURL, ctx);
 }
 
 async function localCjsResolve(

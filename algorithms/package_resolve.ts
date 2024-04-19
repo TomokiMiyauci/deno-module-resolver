@@ -1,15 +1,15 @@
 import { isBuiltin } from "../deps.ts";
-import { urlResolve } from "./url_resolve.ts";
-import { type Context, type Info } from "./types.ts";
+import { urlResolve, URLResolveResult } from "./url_resolve.ts";
+import { type Context, type Info, type ResolveResult } from "./types.ts";
 
 export async function packageResolve(
   specifier: string,
   ctx: Context & { info: Info },
-) {
+): Promise<URLResolveResult | ResolveResult> {
   if (isBuiltin(specifier)) {
     const url = new URL(`node:${specifier}`);
 
-    return { url };
+    return { url, mediaType: "Unknown" };
   } else {
     if (ctx.info.module.kind !== "npm") throw new Error("module should be npm");
 
