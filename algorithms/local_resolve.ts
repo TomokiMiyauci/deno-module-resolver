@@ -1,4 +1,4 @@
-import { type Context } from "./types.ts";
+import { type Context, type ResolveResult } from "./types.ts";
 import { moduleResolve } from "./module_resolve.ts";
 import {
   fromFileUrl,
@@ -6,122 +6,108 @@ import {
   resolveAsFile,
   toFileUrl,
 } from "../deps.ts";
+import { urlResolve } from "./url_resolve.ts";
+import { mediaTypeFromExt } from "./utils.ts";
+
+function localRelativeResolve(
+  specifier: string,
+  referer: URL | string,
+  ctx: Context,
+) {
+  const url = new URL(specifier, referer);
+
+  return urlResolve(url, ctx);
+}
 
 export async function localResolve(
   specifier: string,
   referrerURL: URL | string,
   ctx: Context,
-) {
-  if (ctx.info) {
-    if (ctx.info.module.kind !== "esm") {
-      if (ctx.info.module.kind !== "npm") {
-        throw new Error();
-      }
+): Promise<ResolveResult> {
+  if (!ctx.info) {
+    return localRelativeResolve(specifier, referrerURL, ctx);
+  }
 
-      if (ctx.module === "cjs") {
-        // a. LOAD_AS_FILE(Y + X)
-        const Y = new URL(specifier, referrerURL);
-        const context = {
-          conditions: ctx.conditions,
-          readFile: (path: string) => {
-            const url = toFileUrl(path);
+  if (ctx.info.module.kind === "esm") {
+    const deps = new Map(
+      ctx.info.module.dependencies?.map((dep) => [dep.specifier, dep]),
+    );
+    const dependency = deps.get(specifier);
 
-            return ctx.readFile(url);
-          },
-          existDir: (path: string) => {
-            const url = toFileUrl(path);
+    if (!dependency) throw new Error("Dependency not found");
 
-            return ctx.existDir(url);
-          },
-          existFile: (path: string) => {
-            const url = toFileUrl(path);
+    if (dependency.npmPackage) throw new Error("not supported");
 
-            return ctx.existFile(url);
-          },
-        };
-        const filePath = await resolveAsFile(fromFileUrl(Y), context);
+    const modules = new Map(
+      ctx.info.source.modules.map((module) => [module.specifier, module]),
+    );
 
-        if (typeof filePath === "string") return { url: toFileUrl(filePath) };
+    if ("error" in dependency.code) throw new Error(dependency.code.error);
 
-        // b. LOAD_AS_DIRECTORY(Y + X)
-        const dirPath = await resolveAsDirectory(fromFileUrl(Y), context);
+    const module = modules.get(dependency.code.specifier);
 
-        if (typeof dirPath === "string") {
-          return { url: toFileUrl(dirPath) };
-        }
+    if (!module) throw new Error("Module not found");
+    if ("error" in module) throw new Error(module.error);
 
-        // c. THROW "not found"
-        throw new Error(`Cannot find module '${specifier}'`);
-      }
+    const result = await moduleResolve(module, ctx.info.source, ctx);
 
-      return { url: new URL(specifier, referrerURL) };
-    } else {
-      const deps = new Map(
-        ctx.info.module.dependencies?.map((dep) => [dep.specifier, dep]),
-      );
-      const dependency = deps.get(specifier);
-
-      if (!dependency) throw new Error("Dependency not found");
-
-      if (dependency.npmPackage) throw new Error("not supported");
-
-      const modules = new Map(
-        ctx.info.source.modules.map((module) => [module.specifier, module]),
-      );
-
-      const module = modules.get(dependency.code.specifier);
-
-      if (!module) throw new Error("Module not found");
-      if ("error" in module) throw new Error(module.error);
-
-      const result = await moduleResolve(module, ctx.info.source, ctx);
-
-      return {
-        url: result.url,
-        mediaType: result.mediaType,
-        info: {
-          module,
-          source: ctx.info.source,
-        },
-      };
-    }
+    return { url: result.url, mediaType: result.mediaType };
   }
 
   if (ctx.module === "cjs") {
-    // a. LOAD_AS_FILE(Y + X)
-    const Y = new URL(specifier, referrerURL);
-    const context = {
-      conditions: ctx.conditions,
-      readFile: (path: string) => {
-        const url = toFileUrl(path);
-
-        return ctx.readFile(url);
-      },
-      existDir: (path: string) => {
-        const url = toFileUrl(path);
-
-        return ctx.existDir(url);
-      },
-      existFile: (path: string) => {
-        const url = toFileUrl(path);
-
-        return ctx.existFile(url);
-      },
-    };
-    const filePath = await resolveAsFile(fromFileUrl(Y), context);
-
-    if (typeof filePath === "string") return { url: toFileUrl(filePath) };
-
-    // b. LOAD_AS_DIRECTORY(Y + X)
-    const dirPath = await resolveAsDirectory(fromFileUrl(Y), context);
-
-    if (typeof dirPath === "string") {
-      return { url: toFileUrl(dirPath) };
-    }
-
-    // c. THROW "not found"
-    throw new Error(`Cannot find module '${specifier}'`);
+    return localCjsResolve(specifier, referrerURL, ctx);
   }
 
-  return { url: new URL(specifier, referrerURL) };
+  const url = new URL(specifier, referrerURL);
+  const mediaType = mediaTypeFromExt(url);
+
+  return { url, mediaType };
+}
+
+async function localCjsResolve(
+  specifier: string,
+  referrerURL: URL | string,
+  ctx: Context,
+): Promise<ResolveResult> {
+  // a. LOAD_AS_FILE(Y + X)
+  const Y = new URL(specifier, referrerURL);
+  const context = {
+    conditions: ctx.conditions,
+    readFile: (path: string) => {
+      const url = toFileUrl(path);
+
+      return ctx.readFile(url);
+    },
+    existDir: (path: string) => {
+      const url = toFileUrl(path);
+
+      return ctx.existDir(url);
+    },
+    existFile: (path: string) => {
+      const url = toFileUrl(path);
+
+      return ctx.existFile(url);
+    },
+  };
+  const filePath = await resolveAsFile(fromFileUrl(Y), context);
+
+  if (typeof filePath === "string") {
+    const url = toFileUrl(filePath);
+    const mediaType = mediaTypeFromExt(url);
+
+    return { url: toFileUrl(filePath), mediaType };
+  }
+
+  // b. LOAD_AS_DIRECTORY(Y + X)
+  const dirPath = await resolveAsDirectory(fromFileUrl(Y), context);
+
+  if (typeof dirPath === "string") {
+    const url = toFileUrl(dirPath);
+    const mediaType = mediaTypeFromExt(url);
+
+    return { url, mediaType };
+  }
+
+  // c. THROW "not found"
+  throw new Error(`Cannot find module '${specifier}'`);
 }

@@ -99,7 +99,7 @@ export interface AssertedModule extends BaseEntry, CacheInfo {
 
 export interface Dependency {
   specifier: string;
-  code: Code;
+  code: CodeEntry;
   type?: {
     specifier: string;
     span: Span;
@@ -107,9 +107,18 @@ export interface Dependency {
   npmPackage?: string;
 }
 
-export interface Code {
-  specifier: string;
+interface BaseCode {
   span: Span;
+}
+
+export interface Code extends BaseCode {
+  specifier: string;
+}
+
+export type CodeEntry = Code | ErrorCode;
+
+export interface ErrorCode extends BaseCode {
+  error: string;
 }
 
 export interface Span {

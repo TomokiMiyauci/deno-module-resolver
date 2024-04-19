@@ -11,11 +11,11 @@ export async function packageResolve(
 
     return { url };
   } else {
-    if (ctx.info.module.kind !== "npm") throw new Error();
+    if (ctx.info.module.kind !== "npm") throw new Error("module should be npm");
 
     const npm = ctx.info.source.npmPackages[ctx.info.module.npmPackage];
 
-    if (!npm) throw new Error();
+    if (!npm) throw new Error("no npm");
 
     const { name, subpath } = parseNpmPkg(specifier);
 

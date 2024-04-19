@@ -1,8 +1,9 @@
 import { type Context, type Info } from "./types.ts";
-import { extname, type MediaType } from "../deps.ts";
+import { type MediaType } from "../deps.ts";
 import { urlResolve } from "./url_resolve.ts";
 import { packageResolve } from "./package_resolve.ts";
 import { localResolve } from "./local_resolve.ts";
+import { mediaTypeFromExt } from "./utils.ts";
 
 interface ResolveResult {
   url: URL;
@@ -33,10 +34,6 @@ export async function resolve(
 
     resolved = result.url;
     mediaType = result.mediaType;
-
-    if (result.info) {
-      info = result.info;
-    }
   } else if (specifier.startsWith("#")) {
     throw new Error("imports field is not supported in npm module");
     // 1. Set resolved to the result of PACKAGE_IMPORTS_RESOLVE(specifier, parentURL, defaultConditions).
@@ -74,42 +71,4 @@ export async function resolve(
   }
 
   return { url: realURL, info, mediaType: mediaType ?? "Unknown" };
-}
-
-function mediaTypeFromExt(url: URL): MediaType {
-  const ext = extname(url);
-
-  switch (ext) {
-    case ".js":
-      return "JavaScript";
-    case ".ts":
-      return "TypeScript";
-
-    case ".tsx":
-      return "TSX";
-
-    case ".jsx":
-      return "JSX";
-
-    case ".mjs":
-      return "Mjs";
-
-    case ".cjs":
-      return "Cjs";
-
-    case ".json":
-      return "Json";
-
-    case ".wasm":
-      return "Wasm";
-
-    case ".tsbuildinfo":
-      return "TsBuildInfo";
-
-    case ".map":
-      return "SourceMap";
-
-    default:
-      return "Unknown";
-  }
 }
