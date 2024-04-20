@@ -1,19 +1,27 @@
 import { isBuiltin } from "../deps.ts";
-import { urlResolve, URLResolveResult } from "./url_resolve.ts";
-import { type Context, type Info, type ResolveResult } from "./types.ts";
+import { urlResolve } from "./url_resolve.ts";
+import {
+  type Context,
+  ModuleResolveResult,
+  type ResolveOptions,
+  type ResolveResult,
+} from "./types.ts";
 
 export async function packageResolve(
   specifier: string,
-  ctx: Context & { info: Info },
-): Promise<URLResolveResult | ResolveResult> {
+  options: ResolveOptions & { context: Context },
+): Promise<ModuleResolveResult | ResolveResult> {
   if (isBuiltin(specifier)) {
     const url = new URL(`node:${specifier}`);
 
     return { url, mediaType: "Unknown" };
   } else {
-    if (ctx.info.module.kind !== "npm") throw new Error("module should be npm");
+    if (options.context.module.kind !== "npm") {
+      throw new Error("module should be npm");
+    }
 
-    const npm = ctx.info.source.npmPackages[ctx.info.module.npmPackage];
+    const npm =
+      options.context.source.npmPackages[options.context.module.npmPackage];
 
     if (!npm) throw new Error("no npm");
 
@@ -37,13 +45,13 @@ export async function packageResolve(
 
         pkg = `npm:/${specifier}${subpath.slice(1)}`;
       } else {
-        const dep = ctx.info.source.npmPackages[nameWithVer];
+        const dep = options.context.source.npmPackages[nameWithVer];
 
         pkg = `npm:/${dep.name}@${dep.version}${subpath.slice(1)}`;
       }
     }
 
-    const result = await urlResolve(pkg, ctx);
+    const result = await urlResolve(pkg, options);
 
     return result;
   }

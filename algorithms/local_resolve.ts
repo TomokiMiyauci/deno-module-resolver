@@ -1,6 +1,6 @@
 import {
-  type Context,
   type ModuleResolveResult,
+  type ResolveOptions,
   type ResolveResult,
 } from "./types.ts";
 import { moduleResolve } from "./module_resolve.ts";
@@ -15,11 +15,11 @@ import { mediaTypeFromExt } from "./utils.ts";
 async function localRelativeResolve(
   specifier: string,
   referer: URL | string,
-  ctx: Context,
+  options: ResolveOptions,
 ): Promise<ResolveResult> {
   const url = new URL(specifier, referer);
 
-  if (await ctx.existFile(url)) {
+  if (await options.existFile(url)) {
     const mediaType = mediaTypeFromExt(url);
 
     return { url, mediaType };
@@ -31,15 +31,15 @@ async function localRelativeResolve(
 export async function localResolve(
   specifier: string,
   referrerURL: URL | string,
-  ctx: Context,
+  options: ResolveOptions,
 ): Promise<ResolveResult | ModuleResolveResult> {
-  if (!ctx.info) {
-    return localRelativeResolve(specifier, referrerURL, ctx);
+  if (!options.context) {
+    return localRelativeResolve(specifier, referrerURL, options);
   }
 
-  if (ctx.info.module.kind === "esm") {
+  if (options.context.module.kind === "esm") {
     const deps = new Map(
-      ctx.info.module.dependencies?.map((dep) => [dep.specifier, dep]),
+      options.context.module.dependencies?.map((dep) => [dep.specifier, dep]),
     );
     const dependency = deps.get(specifier);
 
@@ -48,7 +48,9 @@ export async function localResolve(
     if (dependency.npmPackage) throw new Error("not supported");
 
     const modules = new Map(
-      ctx.info.source.modules.map((module) => [module.specifier, module]),
+      options.context.source.modules.map((
+        module,
+      ) => [module.specifier, module]),
     );
 
     if ("error" in dependency.code) throw new Error(dependency.code.error);
@@ -58,48 +60,48 @@ export async function localResolve(
     if (!module) throw new Error("Module not found");
     if ("error" in module) throw new Error(module.error);
 
-    const result = await moduleResolve(module, ctx.info.source, ctx);
+    const result = await moduleResolve(module, options.context.source, options);
 
     return {
       url: result.url,
       mediaType: result.mediaType,
-      info: {
+      context: {
         module,
-        source: ctx.info.source,
+        source: options.context.source,
       },
     };
   }
 
-  if (ctx.module === "cjs") {
-    return localCjsResolve(specifier, referrerURL, ctx);
+  if (options.module === "cjs") {
+    return localCjsResolve(specifier, referrerURL, options);
   }
 
-  return localRelativeResolve(specifier, referrerURL, ctx);
+  return localRelativeResolve(specifier, referrerURL, options);
 }
 
 async function localCjsResolve(
   specifier: string,
   referrerURL: URL | string,
-  ctx: Context,
+  options: ResolveOptions,
 ): Promise<ResolveResult> {
   // a. LOAD_AS_FILE(Y + X)
   const Y = new URL(specifier, referrerURL);
   const context = {
-    conditions: ctx.conditions,
+    conditions: options.conditions,
     readFile: (path: string) => {
       const url = toFileUrl(path);
 
-      return ctx.readFile(url);
+      return options.readFile(url);
     },
     existDir: (path: string) => {
       const url = toFileUrl(path);
 
-      return ctx.existDir(url);
+      return options.existDir(url);
     },
     existFile: (path: string) => {
       const url = toFileUrl(path);
 
-      return ctx.existFile(url);
+      return options.existFile(url);
     },
   };
   const filePath = await resolveAsFile(fromFileUrl(Y), context);

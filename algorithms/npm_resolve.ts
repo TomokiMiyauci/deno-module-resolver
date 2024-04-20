@@ -5,19 +5,19 @@ import {
   join,
   normalize,
   NpmModule,
-  SourceFileInfo,
+  Source,
   toFileUrl,
 } from "../deps.ts";
-import type { Context, ResolveResult } from "./types.ts";
+import type { ResolveOptions, ResolveResult } from "./types.ts";
 import { resolveNpmModule } from "./npm/cjs/resolve.ts";
 import { MediaType } from "../deps.ts";
 
 export async function npmResolve(
   module: NpmModule,
-  source: SourceFileInfo,
-  ctx: Context,
+  source: Source,
+  options: ResolveOptions,
 ): Promise<ResolveResult> {
-  ctx.npm ??= { type: "global", denoDir: new DenoDir().root };
+  options.npm ??= { type: "global", denoDir: new DenoDir().root };
 
   const npm = source.npmPackages[module.npmPackage];
 
@@ -30,23 +30,23 @@ export async function npmResolve(
 
   const resolve = resolveNpmModule;
 
-  if (ctx.npm.type === "global") {
-    const packageURL = createPackageURL(ctx.npm.denoDir, name, version);
+  if (options.npm.type === "global") {
+    const packageURL = createPackageURL(options.npm.denoDir, name, version);
 
-    const url = await resolve(packageURL, packageSubpath, ctx);
+    const url = await resolve(packageURL, packageSubpath, options);
 
     if (!url) {
       throw new Error("Cannot find module");
     }
 
-    const format = await esmFileFormat(url, ctx);
+    const format = await esmFileFormat(url, options);
     const mediaType = (format && formatToMediaType(format)) ?? "Unknown";
 
     return { url, mediaType };
   }
 
-  if (ctx.npm.type === "local") {
-    let parentURL = ctx.npm.baseURL;
+  if (options.npm.type === "local") {
+    let parentURL = options.npm.baseURL;
 
     // 11. While parentURL is not the file system root,
     while (!isFileSystemRoot(parentURL)) {
@@ -56,11 +56,11 @@ export async function npmResolve(
       // 2. Set parentURL to the parent folder URL of parentURL.
       parentURL = getParentURL(parentURL);
 
-      const url = await resolve(packageURL, packageSubpath, ctx);
+      const url = await resolve(packageURL, packageSubpath, options);
 
       if (!url) continue;
 
-      const format = await esmFileFormat(url, ctx);
+      const format = await esmFileFormat(url, options);
       const mediaType = (format && formatToMediaType(format)) ?? "Unknown";
 
       return { url, mediaType };

@@ -1,15 +1,22 @@
-import { MediaType, Module, SourceFileInfo } from "../deps.ts";
+import { MediaType, Module, Source } from "../deps.ts";
 
-export interface Context {
+export interface ResolveOptions {
   readFile(url: URL): Promise<string | null>;
-  conditions: Iterable<string>;
   existDir(url: URL): Promise<boolean>;
   existFile(url: URL): Promise<boolean>;
   realUrl(url: URL): Promise<URL | null | undefined> | URL | null | undefined;
+  inspect(specifier: string): Promise<Source>;
 
-  getInfo(specifier: string): Promise<SourceFileInfo>;
+  /**
+   * If {@link module} is "esm":
+   * @default ["deno", "node", "imports"]
+   *
+   * If {@link module} is "cjs":
+   * @default ["node", "require"]
+   */
+  conditions: Iterable<string>;
 
-  info?: Info;
+  context?: Context;
   npm?: NpmOptions;
 
   /**
@@ -18,8 +25,8 @@ export interface Context {
   module?: "esm" | "cjs";
 }
 
-export interface Info {
-  source: SourceFileInfo;
+export interface Context {
+  source: Source;
   module: Module;
 }
 
@@ -41,5 +48,5 @@ export interface ResolveResult {
 }
 
 export interface ModuleResolveResult extends ResolveResult {
-  info: Info;
+  context: Context;
 }
