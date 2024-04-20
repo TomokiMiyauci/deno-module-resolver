@@ -1,4 +1,4 @@
-import { isBuiltin } from "../deps.ts";
+import { isBuiltin, NpmModule } from "../deps.ts";
 import { urlResolve } from "./url_resolve.ts";
 import {
   type Context,
@@ -6,6 +6,7 @@ import {
   type ResolveOptions,
   type ResolveResult,
 } from "./types.ts";
+import { npmResolve } from "./npm_resolve.ts";
 
 export async function packageResolve(
   specifier: string,
@@ -15,46 +16,67 @@ export async function packageResolve(
     const url = new URL(`node:${specifier}`);
 
     return { url, mediaType: "Unknown" };
-  } else {
-    if (options.context.module.kind !== "npm") {
-      throw new Error("module should be npm");
-    }
-
-    const npm =
-      options.context.source.npmPackages[options.context.module.npmPackage];
-
-    if (!npm) throw new Error("no npm");
-
-    const { name, subpath } = parseNpmPkg(specifier);
-
-    let pkg: string;
-    if (npm.name === name) {
-      pkg = `npm:/${npm.name}@${npm.version}${subpath.slice(1)}`;
-    } else {
-      const depsMap = new Map<string, string>(
-        npm.dependencies.map((nameWithVersion) => {
-          const name = extractName(nameWithVersion);
-          return [name, nameWithVersion];
-        }),
-      );
-
-      const nameWithVer = depsMap.get(name);
-
-      if (!nameWithVer) {
-        console.log("no name with version", specifier);
-
-        pkg = `npm:/${specifier}${subpath.slice(1)}`;
-      } else {
-        const dep = options.context.source.npmPackages[nameWithVer];
-
-        pkg = `npm:/${dep.name}@${dep.version}${subpath.slice(1)}`;
-      }
-    }
-
-    const result = await urlResolve(pkg, options);
-
-    return result;
   }
+
+  if (options.context.module.kind !== "npm") {
+    throw new Error("module should be npm");
+  }
+
+  const npm =
+    options.context.source.npmPackages[options.context.module.npmPackage];
+
+  if (!npm) throw new Error("no npm");
+
+  const { name, subpath } = parseNpmPkg(specifier);
+
+  if (npm.name === name) {
+    const module = {
+      kind: "npm",
+      specifier: `npm:/${npm.name}@${npm.version}${subpath.slice(1)}`,
+      npmPackage: options.context.module.npmPackage,
+    } satisfies NpmModule;
+
+    return {
+      ...await npmResolve(module, options.context.source, options),
+      context: {
+        module,
+        source: options.context.source,
+      },
+    };
+  }
+
+  const depsMap = new Map<string, string>(
+    npm.dependencies.map((nameWithVersion) => {
+      const name = extractName(nameWithVersion);
+      return [name, nameWithVersion];
+    }),
+  );
+
+  const nameWithVersion = depsMap.get(name);
+  const dep = nameWithVersion &&
+    options.context.source.npmPackages[nameWithVersion];
+
+  if (dep) {
+    const module = {
+      kind: "npm",
+      specifier: `npm:/${dep.name}@${dep.version}${subpath.slice(1)}`,
+      npmPackage: nameWithVersion,
+    } satisfies NpmModule;
+
+    return {
+      ...await npmResolve(module, options.context.source, options),
+      context: {
+        module,
+        source: options.context.source,
+      },
+    };
+  }
+
+  // The case where dependencies cannot be detected is when optional: true in peerDependency.
+  // In this case, version resolution is left to the user
+  const pkg = `npm:/${specifier}${subpath.slice(1)}`;
+
+  return urlResolve(pkg, options);
 }
 
 function parseNpmPkg(specifier: string) {
