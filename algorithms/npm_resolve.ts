@@ -4,11 +4,13 @@ import {
   join,
   normalize,
   NpmModule,
+  readPackageJson,
   Source,
   toFileUrl,
 } from "../deps.ts";
 import type { ResolveOptions, ResolveResult } from "./types.ts";
-import { resolveNpmModule } from "./npm/cjs/resolve.ts";
+import { resolveCjs } from "./npm/cjs_resolve.ts";
+import { resolveEsm } from "./npm/esm_resolve.ts";
 import { MediaType } from "../deps.ts";
 
 export async function npmResolve(
@@ -25,10 +27,12 @@ export async function npmResolve(
   const subpath = module.specifier.slice(npmSpecifier.length);
   const packageSubpath = `.${subpath}` as const;
 
-  const resolve = resolveNpmModule;
-
   if (options.npm.type === "global") {
     const packageURL = createPackageURL(options.npm.denoDir, name, version);
+
+    const pjson = await readPackageJson(packageURL, options);
+    const isEsModule = pjson?.type === "module";
+    const resolve = isEsModule ? resolveEsm : resolveCjs;
 
     const url = await resolve(packageURL, packageSubpath, options);
 
@@ -52,6 +56,7 @@ export async function npmResolve(
 
       // 2. Set parentURL to the parent folder URL of parentURL.
       parentURL = getParentURL(parentURL);
+      const resolve = resolveEsm;
 
       const url = await resolve(packageURL, packageSubpath, options);
 

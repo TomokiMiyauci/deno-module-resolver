@@ -1,4 +1,4 @@
-import { ResolveOptions } from "../../types.ts";
+import type { ResolveOptions } from "../types.ts";
 import {
   fromFileUrl,
   join,
@@ -7,9 +7,9 @@ import {
   resolveAsDirectory,
   resolveAsFile,
   toFileUrl,
-} from "../../../deps.ts";
+} from "../../deps.ts";
 
-export async function resolveNpmModule(
+export async function resolveCjs(
   packageURL: URL,
   subpath: `.${string}`,
   options: ResolveOptions,
@@ -66,7 +66,7 @@ async function resolvePackageExports(
   packageURL: URL,
   subpath: `.${string}`,
   options: ResolveOptions,
-) {
+): Promise<URL | undefined> {
   const pjson = await readPackageJson(packageURL, options);
 
   const exports = pjson?.exports;

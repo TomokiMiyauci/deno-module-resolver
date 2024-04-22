@@ -1,6 +1,5 @@
 import { moduleResolve } from "./module_resolve.ts";
 import { type ModuleResolveResult, type ResolveOptions } from "./types.ts";
-import { type ModuleEntry } from "../deps.ts";
 
 /**
  * @throws {Error}
@@ -10,28 +9,21 @@ export async function urlResolve(
   options: ResolveOptions,
 ): Promise<ModuleResolveResult> {
   const specifier = url.toString();
-  const sourceFile = await options.inspect(specifier);
-  const redirects = new Map<string, string>(
-    Object.entries(sourceFile.redirects),
-  );
-  const normalized = redirects.has(specifier)
-    ? redirects.get(specifier)!
-    : specifier;
-
-  const modules = new Map<string, ModuleEntry>(
-    sourceFile.modules.map((entry) => [entry.specifier, entry]),
+  const source = await options.inspect(specifier);
+  const normalized = source.redirects[specifier] ?? specifier;
+  const moduleEntry = source.modules.find((entry) =>
+    entry.specifier === normalized
   );
 
-  const module = modules.get(normalized);
+  if (!moduleEntry) throw new Error("Module not found");
+  if ("error" in moduleEntry) throw new Error(moduleEntry.error);
 
-  if (!module) throw new Error("Module not found");
-  if ("error" in module) throw new Error(module.error);
-
-  const result = await moduleResolve(module, sourceFile, options);
+  const module = moduleEntry;
+  const result = await moduleResolve(module, source, options);
 
   return {
     url: result.url,
     mediaType: result.mediaType,
-    context: { module, source: sourceFile },
+    context: { module, source },
   };
 }
