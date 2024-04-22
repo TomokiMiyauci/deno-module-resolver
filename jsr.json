@@ -1,0 +1,4 @@
+{
+  "name": "@miyauci/deno-module-resolver",
+  "exports": "./mod.ts"
+}
