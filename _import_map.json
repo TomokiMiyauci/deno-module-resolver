@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "jsr:@miyauci/deno-resolution": "./mod.ts",
+    "jsr:@std/assert": "jsr:@std/assert@^0.221.0"
+  }
+}

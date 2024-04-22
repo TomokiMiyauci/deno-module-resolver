@@ -1,0 +1,5 @@
+{
+  "tasks": {
+    "test": "deno test --import-map=_import_map.json --doc"
+  }
+}
