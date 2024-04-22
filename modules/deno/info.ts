@@ -52,7 +52,6 @@ export type ModuleEntry =
 
 export type Module =
   | EsmModule
-  | JsonModule
   | NpmModule
   | AssertedModule
   | NodeModule;
@@ -129,12 +128,6 @@ export interface Span {
 export interface LineChar {
   line: number;
   character: number;
-}
-
-export interface JsonModule extends BaseEntry, CacheInfo {
-  kind: "json";
-  mediaType: MediaType;
-  size: number;
 }
 
 export interface CacheInfo {

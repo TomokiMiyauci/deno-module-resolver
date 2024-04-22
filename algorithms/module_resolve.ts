@@ -1,6 +1,5 @@
 import { esmResolve } from "./esm_resolve.ts";
 import { npmResolve } from "./npm_resolve.ts";
-import { jsonResolve } from "./json_resolve.ts";
 import { nodeResolve } from "./node_resolve.ts";
 import { assertedResolve } from "./asserted_resolve.ts";
 import type { Module, Source } from "../deps.ts";
@@ -23,8 +22,5 @@ export function moduleResolve(
 
     case "asserted":
       return assertedResolve(module);
-
-    case "json":
-      return jsonResolve(module);
   }
 }
