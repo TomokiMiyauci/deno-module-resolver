@@ -1,8 +1,13 @@
 import { ResolveOptions } from "../../types.ts";
-import { join } from "jsr:@std/url";
-import { fromFileUrl, toFileUrl } from "jsr:@std/path";
-import { packageExportsResolve, readPackageJson } from "./deps.ts";
-import { resolveAsDirectory, resolveAsFile } from "../../../deps.ts";
+import {
+  fromFileUrl,
+  join,
+  packageExportsResolve,
+  readPackageJson,
+  resolveAsDirectory,
+  resolveAsFile,
+  toFileUrl,
+} from "../../../deps.ts";
 
 export async function resolveNpmModule(
   packageURL: URL,
