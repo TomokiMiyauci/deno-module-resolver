@@ -17,7 +17,7 @@ export interface ResolveOptions {
   conditions: Iterable<string>;
 
   context?: Context;
-  npm?: NpmOptions;
+  npm: NpmOptions;
 
   /**
    * @default esm

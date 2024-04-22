@@ -1,5 +1,4 @@
 import {
-  DenoDir,
   esmFileFormat,
   type Format,
   join,
@@ -17,8 +16,6 @@ export async function npmResolve(
   source: Source,
   options: ResolveOptions,
 ): Promise<ResolveResult> {
-  options.npm ??= { type: "global", denoDir: new DenoDir().root };
-
   const npm = source.npmPackages[module.npmPackage];
 
   if (!npm) throw new Error("npm not found");
