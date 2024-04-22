@@ -1,16 +1,16 @@
-# deno-resolution
+# deno-module-resolver
 
 Deno module resolution algorithms
 
-Reimplement Deno's module resolution and resolve to a `file:` URL or `node:`
-URL.
+Reimplement Deno's module resolution and resolve specifier to `file:`, `data:`
+or `node:` URL.
 
 ## Usage
 
 In Default, use the global cache to resolve modules.
 
 ```ts
-import { resolve } from "jsr:@miyauci/deno-resolution";
+import { resolve } from "jsr:@miyauci/deno-module-resolver";
 import { assertEquals } from "jsr:@std/assert";
 
 const result = await resolve("npm:react@^18", import.meta.url);
