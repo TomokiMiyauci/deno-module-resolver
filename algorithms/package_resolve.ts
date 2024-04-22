@@ -75,8 +75,9 @@ export async function packageResolve(
   // The case where dependencies cannot be detected is when optional: true in peerDependency.
   // In this case, version resolution is left to the user
   const pkg = `npm:/${specifier}${subpath.slice(1)}`;
+  const url = new URL(pkg);
 
-  return urlResolve(pkg, options);
+  return urlResolve(url, options);
 }
 
 function parseNpmPkg(specifier: string) {

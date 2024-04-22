@@ -86,7 +86,8 @@ export async function resolve(
   let context: Context | undefined = opt.context;
 
   if (URL.canParse(specifier)) {
-    const result = await urlResolve(specifier, opt);
+    const url = new URL(specifier);
+    const result = await urlResolve(url, opt);
 
     resolved = result.url;
     mediaType = result.mediaType;
