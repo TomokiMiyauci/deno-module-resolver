@@ -7,6 +7,7 @@
       "jsr:@miyauci/format@^1.1.0": "jsr:@miyauci/format@1.1.0",
       "jsr:@miyauci/node-esm-resolution@1.0.0-beta.5": "jsr:@miyauci/node-esm-resolution@1.0.0-beta.5",
       "jsr:@miyauci/node-esm-resolution@1.0.0-beta.6": "jsr:@miyauci/node-esm-resolution@1.0.0-beta.6",
+      "jsr:@miyauci/node-esm-resolver@1.0.0-beta.7": "jsr:@miyauci/node-esm-resolver@1.0.0-beta.7",
       "jsr:@std/assert@^0.218.2": "jsr:@std/assert@0.218.2",
       "jsr:@std/assert@^0.221.0": "jsr:@std/assert@0.221.0",
       "jsr:@std/bytes@^0.218.2": "jsr:@std/bytes@0.218.2",
@@ -16,6 +17,7 @@
       "jsr:@std/fs@^0.218.2": "jsr:@std/fs@0.218.2",
       "jsr:@std/fs@^0.221.0": "jsr:@std/fs@0.221.0",
       "jsr:@std/io@^0.218.2": "jsr:@std/io@0.218.2",
+      "jsr:@std/json@^0.221.0": "jsr:@std/json@0.221.0",
       "jsr:@std/path": "jsr:@std/path@0.221.0",
       "jsr:@std/path@^0.218.2": "jsr:@std/path@0.218.2",
       "jsr:@std/path@^0.221.0": "jsr:@std/path@0.221.0",
@@ -57,6 +59,17 @@
           "jsr:@std/regexp@^0.221.0"
         ]
       },
+      "@miyauci/node-esm-resolver@1.0.0-beta.7": {
+        "integrity": "f858e540f085bb2f5eb46498be87cf27bf0c1f76264bbf9647bd568fb8dc29ac",
+        "dependencies": [
+          "jsr:@miyauci/format@^1.1.0",
+          "jsr:@std/collections@^0.221.0",
+          "jsr:@std/json@^0.221.0",
+          "jsr:@std/path@^0.221.0",
+          "jsr:@std/regexp@^0.221.0",
+          "jsr:@std/url@^0.221.0"
+        ]
+      },
       "@std/assert@0.218.2": {
         "integrity": "7f0a5a1a8cf86607cd6c2c030584096e1ffad27fc9271429a8cb48cfbdee5eaf"
       },
@@ -90,6 +103,9 @@
           "jsr:@std/assert@^0.218.2",
           "jsr:@std/bytes@^0.218.2"
         ]
+      },
+      "@std/json@0.221.0": {
+        "integrity": "3e63d5fe37c5256b9db345d42c11b57c850aa501bc6464d310e4836b85631b5e"
       },
       "@std/path@0.218.2": {
         "integrity": "b568fd923d9e53ad76d17c513e7310bda8e755a3e825e6289a0ce536404e2662",

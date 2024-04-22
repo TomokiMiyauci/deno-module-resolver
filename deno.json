@@ -1,5 +1,7 @@
 {
   "tasks": {
-    "test": "deno test --import-map=_import_map.json --doc"
-  }
+    "test": "deno test --import-map=_import_map.json --doc",
+    "publish": "deno publish -c=jsr.json"
+  },
+  "exclude": ["CHANGELOG.md"]
 }
