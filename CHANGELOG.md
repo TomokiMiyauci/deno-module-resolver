@@ -1,3 +1,10 @@
+# [1.0.0-beta.2](https://github.com/TomokiMiyauci/deno-module-resolver/compare/1.0.0-beta.1...1.0.0-beta.2) (2024-04-22)
+
+
+### Features
+
+* use external deps from single file ([ba9731f](https://github.com/TomokiMiyauci/deno-module-resolver/commit/ba9731fdbfe3650c5d2161aa48e35eeb2b61a2fb))
+
 # 1.0.0-beta.1 (2024-04-22)
 
 
