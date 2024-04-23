@@ -6,7 +6,7 @@ import {
   type ResolveOptions,
   type ResolveResult,
 } from "./types.ts";
-import { npmResolve } from "./npm_resolve.ts";
+import { npmResolve } from "./modules/npm_resolve.ts";
 
 export async function packageResolve(
   specifier: string,

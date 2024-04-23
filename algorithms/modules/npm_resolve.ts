@@ -7,11 +7,11 @@ import {
   readPackageJson,
   Source,
   toFileUrl,
-} from "../deps.ts";
-import type { ResolveOptions, ResolveResult } from "./types.ts";
-import { resolveCjs } from "./npm/cjs_resolve.ts";
-import { resolveEsm } from "./npm/esm_resolve.ts";
-import { MediaType } from "../deps.ts";
+} from "../../deps.ts";
+import type { ResolveOptions, ResolveResult } from "../types.ts";
+import { resolveCjs } from "../npm/cjs_resolve.ts";
+import { resolveEsm } from "../npm/esm_resolve.ts";
+import { MediaType } from "../../deps.ts";
 
 export async function npmResolve(
   module: NpmModule,

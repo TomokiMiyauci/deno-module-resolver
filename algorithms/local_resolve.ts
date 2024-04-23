@@ -3,7 +3,7 @@ import {
   type ResolveOptions,
   type ResolveResult,
 } from "./types.ts";
-import { moduleResolve } from "./module_resolve.ts";
+import { moduleResolve } from "./modules/module_resolve.ts";
 import {
   fromFileUrl,
   resolveAsDirectory,

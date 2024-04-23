@@ -1,4 +1,4 @@
-import { moduleResolve } from "./module_resolve.ts";
+import { moduleResolve } from "./modules/module_resolve.ts";
 import { type ModuleResolveResult, type ResolveOptions } from "./types.ts";
 
 /**

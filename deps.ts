@@ -14,6 +14,7 @@ export {
   type MediaType,
   type Module,
   type ModuleEntry,
+  type NodeModule,
   type NpmModule,
   type SourceFileInfo as Source,
 } from "./modules/deno/info.ts";
