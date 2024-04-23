@@ -8,7 +8,10 @@ import type { ResolveOptions, ResolveResult } from "../types.ts";
 export function moduleResolve(
   module: Module,
   source: Source,
-  options: ResolveOptions,
+  options: Pick<
+    ResolveOptions,
+    "npm" | "existDir" | "existFile" | "readFile" | "conditions"
+  >,
 ): Promise<ResolveResult> | ResolveResult {
   switch (module.kind) {
     case "esm":

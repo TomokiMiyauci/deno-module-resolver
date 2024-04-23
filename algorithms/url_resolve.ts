@@ -6,7 +6,10 @@ import { type ModuleResolveResult, type ResolveOptions } from "./types.ts";
  */
 export async function urlResolve(
   url: URL,
-  options: ResolveOptions,
+  options: Pick<
+    ResolveOptions,
+    "npm" | "existDir" | "existFile" | "readFile" | "conditions" | "inspect"
+  >,
 ): Promise<ModuleResolveResult> {
   const specifier = url.toString();
   const source = await options.inspect(specifier);

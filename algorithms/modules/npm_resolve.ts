@@ -16,7 +16,10 @@ import { MediaType } from "../../deps.ts";
 export async function npmResolve(
   module: NpmModule,
   source: Source,
-  options: ResolveOptions,
+  options: Pick<
+    ResolveOptions,
+    "npm" | "existDir" | "existFile" | "readFile" | "conditions"
+  >,
 ): Promise<ResolveResult> {
   const npm = source.npmPackages[module.npmPackage];
 

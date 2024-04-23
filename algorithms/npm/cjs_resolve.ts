@@ -12,7 +12,10 @@ import {
 export async function resolveCjs(
   packageURL: URL,
   subpath: `.${string}`,
-  options: ResolveOptions,
+  options: Pick<
+    ResolveOptions,
+    "conditions" | "existDir" | "existFile" | "readFile"
+  >,
 ): Promise<URL | undefined> {
   const exportsPath = await resolvePackageExports(packageURL, subpath, options);
   if (exportsPath) return exportsPath;
@@ -65,7 +68,10 @@ export async function resolveCjs(
 async function resolvePackageExports(
   packageURL: URL,
   subpath: `.${string}`,
-  options: ResolveOptions,
+  options: Pick<
+    ResolveOptions,
+    "readFile" | "conditions" | "existDir" | "existFile"
+  >,
 ): Promise<URL | undefined> {
   const pjson = await readPackageJson(packageURL, options);
 

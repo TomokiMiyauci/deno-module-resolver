@@ -4,7 +4,10 @@ import { type ResolveOptions } from "../types.ts";
 export async function resolveEsm(
   packageURL: URL | string,
   subpath: `.${string}`,
-  options: ResolveOptions,
+  options: Pick<
+    ResolveOptions,
+    "conditions" | "readFile" | "existFile" | "existDir"
+  >,
 ): Promise<URL> {
   // 4. Let pjson be the result of READ_PACKAGE_JSON(packageURL).
   const pjson = await readPackageJson(packageURL, options);
