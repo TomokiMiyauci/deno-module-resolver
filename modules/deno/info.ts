@@ -6,7 +6,6 @@ export async function info(file: string): Promise<SourceFileInfo>;
 export async function info(file?: string): Promise<Output | SourceFileInfo> {
   const options = {
     args: ["info", "--json"],
-    env: { "DENO_NO_PACKAGE_JSON": "true" },
     stdout: "piped",
     stderr: "inherit",
   } satisfies Deno.CommandOptions;

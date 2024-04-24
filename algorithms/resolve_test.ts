@@ -65,8 +65,6 @@ describe("resolve", () => {
     expect(result.context).toBeTruthy();
     expect(result.local).toBeTruthy();
     expect(result.mediaType).toBe("Cjs");
-
-    console.log(result);
   });
 
   it("should resolve as local URL", async () => {
@@ -81,7 +79,7 @@ describe("resolve", () => {
     expect(result.mediaType).toBe("JavaScript");
   });
 
-  it("should resolve npm specifier", async () => {
+  it("should resolve in npm specifier", async () => {
     const npmResult = await resolve("npm:react@18.2.0", import.meta.url);
     const result = await resolve(
       "./cjs/react.production.min.js",
