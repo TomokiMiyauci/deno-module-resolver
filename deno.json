@@ -3,5 +3,8 @@
     "test": "deno test --import-map=_import_map.json --doc",
     "publish": "deno publish -c=jsr.json"
   },
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true
+  },
   "exclude": ["CHANGELOG.md"]
 }
