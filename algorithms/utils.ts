@@ -7,6 +7,7 @@ import {
 } from "../deps.ts";
 import { moduleResolve } from "./modules/module_resolve.ts";
 import type { ModuleResolveResult, ResolveOptions } from "./types.ts";
+import { Msg } from "./constants.ts";
 
 export function mediaTypeFromExt(url: URL): MediaType {
   const ext = extname(url);
@@ -55,7 +56,7 @@ export async function resolveModuleLike(
     "npm" | "existDir" | "existFile" | "readFile" | "conditions"
   >,
 ): Promise<ModuleResolveResult> {
-  if (!moduleEntry) throw new Error(message);
+  if (!moduleEntry) throw new Error(Msg.ModuleEntryNotFound);
   if ("error" in moduleEntry) throw new Error(moduleEntry.error);
 
   const module = moduleEntry;
@@ -68,8 +69,6 @@ export async function resolveModuleLike(
     context: { module, source },
   };
 }
-
-const message = `Cannot find module`;
 
 export function formatToMediaType(format: Format): MediaType {
   switch (format) {

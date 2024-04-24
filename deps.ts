@@ -25,3 +25,4 @@ export { normalize } from "jsr:@std/url@^0.221.0/normalize";
 export { isBuiltin } from "node:module";
 export { extname } from "jsr:@std/url@^0.221.0/extname";
 export { exists } from "jsr:@std/fs@^0.221.0/exists";
+export { format } from "jsr:@miyauci/format@^1.1.0";

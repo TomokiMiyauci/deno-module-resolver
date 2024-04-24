@@ -6,6 +6,7 @@ import {
 import { urlResolve } from "./url_resolve.ts";
 import {
   esmFileFormat,
+  format,
   fromFileUrl,
   resolveAsDirectory,
   resolveAsFile,
@@ -16,6 +17,7 @@ import {
   mediaTypeFromExt,
   resolveModuleLike,
 } from "./utils.ts";
+import { Msg } from "./constants.ts";
 
 async function localRelativeResolve(
   specifier: string,
@@ -123,6 +125,7 @@ async function localCjsResolve(
     return { url, mediaType, local: dirPath };
   }
 
+  const message = format(Msg.ModuleNotFound, { specifier });
   // c. THROW "not found"
-  throw new Error(`Cannot find module '${specifier}'`);
+  throw new Error(message);
 }

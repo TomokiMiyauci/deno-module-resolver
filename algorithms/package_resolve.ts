@@ -15,7 +15,7 @@ export async function packageResolve(
   if (isBuiltin(specifier)) {
     const url = new URL(`node:${specifier}`);
 
-    return { url, mediaType: "Unknown" };
+    return { url, mediaType: "Unknown", local: null };
   }
 
   if (options.context.module.kind !== "npm") {
