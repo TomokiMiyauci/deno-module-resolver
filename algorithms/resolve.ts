@@ -54,7 +54,7 @@ function resolveOptions(options: Partial<ResolveOptions>): ResolveOptions {
   return {
     readFile: options.readFile?.bind(options) ?? defaults.readFile,
     existDir: options.existDir?.bind(options) ?? defaults.existDir,
-    existFile: options.existDir?.bind(options) ?? defaults.existFile,
+    existFile: options.existFile?.bind(options) ?? defaults.existFile,
     realUrl: options.realUrl?.bind(options) ?? defaults.realUrl,
     inspect: options.inspect?.bind(options) ?? defaults.inspect,
     conditions: options.conditions ?? {
