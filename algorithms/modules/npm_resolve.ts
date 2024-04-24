@@ -1,6 +1,7 @@
 import {
   esmFileFormat,
   type Format,
+  fromFileUrl,
   join,
   normalize,
   NpmModule,
@@ -33,6 +34,10 @@ export async function npmResolve(
   if (options.npm.type === "global") {
     const packageURL = createPackageURL(options.npm.denoDir, name, version);
 
+    if (!await options.existDir(packageURL)) {
+      throw new Error("Cannot find module");
+    }
+
     const pjson = await readPackageJson(packageURL, options);
     const isEsModule = pjson?.type === "module";
     const resolve = isEsModule ? resolveEsm : resolveCjs;
@@ -46,7 +51,7 @@ export async function npmResolve(
     const format = await esmFileFormat(url, options);
     const mediaType = (format && formatToMediaType(format)) ?? "Unknown";
 
-    return { url, mediaType };
+    return { url, mediaType, local: fromFileUrl(url) };
   }
 
   if (options.npm.type === "local") {
@@ -68,7 +73,7 @@ export async function npmResolve(
       const format = await esmFileFormat(url, options);
       const mediaType = (format && formatToMediaType(format)) ?? "Unknown";
 
-      return { url, mediaType };
+      return { url, mediaType, local: fromFileUrl(url) };
     }
   }
 

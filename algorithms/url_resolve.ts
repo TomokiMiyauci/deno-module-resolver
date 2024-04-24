@@ -1,5 +1,5 @@
-import { moduleResolve } from "./modules/module_resolve.ts";
 import { type ModuleResolveResult, type ResolveOptions } from "./types.ts";
+import { resolveModuleLike } from "./utils.ts";
 
 /**
  * @throws {Error}
@@ -18,15 +18,5 @@ export async function urlResolve(
     entry.specifier === normalized
   );
 
-  if (!moduleEntry) throw new Error("Module not found");
-  if ("error" in moduleEntry) throw new Error(moduleEntry.error);
-
-  const module = moduleEntry;
-  const result = await moduleResolve(module, source, options);
-
-  return {
-    url: result.url,
-    mediaType: result.mediaType,
-    context: { module, source },
-  };
+  return resolveModuleLike(moduleEntry, source, options);
 }

@@ -3,32 +3,36 @@ import {
   type ResolveOptions,
   type ResolveResult,
 } from "./types.ts";
-import { moduleResolve } from "./modules/module_resolve.ts";
+import { urlResolve } from "./url_resolve.ts";
 import {
   fromFileUrl,
   resolveAsDirectory,
   resolveAsFile,
   toFileUrl,
 } from "../deps.ts";
-import { mediaTypeFromExt } from "./utils.ts";
+import { mediaTypeFromExt, resolveModuleLike } from "./utils.ts";
 
 async function localRelativeResolve(
   specifier: string,
   referer: URL | string,
   options: ResolveOptions,
-): Promise<ResolveResult> {
+): Promise<ResolveResult | ModuleResolveResult> {
   const url = new URL(specifier, referer);
 
-  if (await options.existFile(url)) {
-    const mediaType = mediaTypeFromExt(url);
+  if (url.protocol === "file:") {
+    if (await options.existFile(url)) {
+      const mediaType = mediaTypeFromExt(url);
 
-    return { url, mediaType };
+      return { url, mediaType, local: fromFileUrl(url) };
+    }
+
+    throw new Error("Module not found");
   }
 
-  throw new Error("Module not found");
+  return urlResolve(url, options);
 }
 
-export async function localResolve(
+export function localResolve(
   specifier: string,
   referrerURL: URL | string,
   options: ResolveOptions,
@@ -38,38 +42,20 @@ export async function localResolve(
   }
 
   if (options.context.module.kind === "esm") {
-    const deps = new Map(
-      options.context.module.dependencies?.map((dep) => [dep.specifier, dep]),
+    const dependency = options.context.module.dependencies?.find((dep) =>
+      dep.specifier === specifier
     );
-    const dependency = deps.get(specifier);
 
     if (!dependency) throw new Error("Dependency not found");
 
-    if (dependency.npmPackage) throw new Error("not supported");
-
-    const modules = new Map(
-      options.context.source.modules.map((
-        module,
-      ) => [module.specifier, module]),
-    );
-
     if ("error" in dependency.code) throw new Error(dependency.code.error);
 
-    const module = modules.get(dependency.code.specifier);
+    const normalized = dependency.code.specifier;
+    const moduleEntry = options.context.source.modules.find((module) =>
+      module.specifier === normalized
+    );
 
-    if (!module) throw new Error("Module not found");
-    if ("error" in module) throw new Error(module.error);
-
-    const result = await moduleResolve(module, options.context.source, options);
-
-    return {
-      url: result.url,
-      mediaType: result.mediaType,
-      context: {
-        module,
-        source: options.context.source,
-      },
-    };
+    return resolveModuleLike(moduleEntry, options.context.source, options);
   }
 
   if (options.module === "cjs") {
@@ -110,7 +96,7 @@ async function localCjsResolve(
     const url = toFileUrl(filePath);
     const mediaType = mediaTypeFromExt(url);
 
-    return { url: toFileUrl(filePath), mediaType };
+    return { url: toFileUrl(filePath), mediaType, local: filePath };
   }
 
   // b. LOAD_AS_DIRECTORY(Y + X)
@@ -120,7 +106,7 @@ async function localCjsResolve(
     const url = toFileUrl(dirPath);
     const mediaType = mediaTypeFromExt(url);
 
-    return { url, mediaType };
+    return { url, mediaType, local: dirPath };
   }
 
   // c. THROW "not found"

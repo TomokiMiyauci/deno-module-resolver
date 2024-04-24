@@ -46,7 +46,8 @@ const defaults = {
 interface ResolveResult {
   url: URL;
   mediaType: MediaType;
-  context?: Context;
+  context: Context | null;
+  local: string | null;
 }
 
 function resolveOptions(options: Partial<ResolveOptions>): ResolveOptions {
@@ -62,6 +63,7 @@ function resolveOptions(options: Partial<ResolveOptions>): ResolveOptions {
     npm: { type: "global", denoDir: new DenoDir().root },
     module,
     context: options.context,
+    bareNodeBuiltins: options.bareNodeBuiltins ?? false,
   };
 }
 
@@ -83,7 +85,8 @@ export async function resolve(
   // 1. Let resolved be undefined.
   let resolved: URL;
   let mediaType: MediaType;
-  let context: Context | undefined = opt.context;
+  let context: Context | undefined | null = opt.context;
+  let local: string | null = null;
 
   if (URL.canParse(specifier)) {
     const url = new URL(specifier);
@@ -92,6 +95,7 @@ export async function resolve(
     resolved = result.url;
     mediaType = result.mediaType;
     context = result.context;
+    local = result.local;
   } else if (
     ["/", "./", "../"].some((value) => specifier.startsWith(value))
   ) {
@@ -99,6 +103,7 @@ export async function resolve(
 
     resolved = result.url;
     mediaType = result.mediaType;
+    local = result.local;
     if ("context" in result) context = result.context;
   } else if (specifier.startsWith("#")) {
     throw new Error("imports field is not supported in npm module");
@@ -123,6 +128,7 @@ export async function resolve(
 
     resolved = result.url;
     mediaType = result.mediaType;
+    local = result.local;
 
     if ("context" in result) context = result.context;
   }
@@ -131,5 +137,5 @@ export async function resolve(
     ? await opt.realUrl(resolved) ?? resolved
     : resolved;
 
-  return { url: realURL, context, mediaType };
+  return { url: realURL, context: context ?? null, mediaType, local };
 }

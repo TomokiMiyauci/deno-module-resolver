@@ -10,7 +10,6 @@ export {
   type AssertedModule,
   type CacheInfo,
   type EsmModule,
-  type JsonModule,
   type MediaType,
   type Module,
   type ModuleEntry,

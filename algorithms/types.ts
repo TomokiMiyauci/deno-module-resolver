@@ -16,13 +16,18 @@ export interface ResolveOptions {
    */
   conditions: Iterable<string>;
 
-  context?: Context;
+  context?: Context | null;
   npm: NpmOptions;
 
   /**
    * @default esm
    */
   module?: "esm" | "cjs";
+
+  /**
+   * @default false
+   */
+  bareNodeBuiltins?: boolean;
 }
 
 export interface Context {
@@ -45,6 +50,10 @@ export type NpmOptions = NpmGlobalOptions | NpmLocalOptions;
 export interface ResolveResult {
   url: URL;
   mediaType: MediaType;
+
+  /** File URL represent to local path.
+   */
+  local: string | null;
 }
 
 export interface ModuleResolveResult extends ResolveResult {
