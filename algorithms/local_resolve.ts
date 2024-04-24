@@ -5,12 +5,17 @@ import {
 } from "./types.ts";
 import { urlResolve } from "./url_resolve.ts";
 import {
+  esmFileFormat,
   fromFileUrl,
   resolveAsDirectory,
   resolveAsFile,
   toFileUrl,
 } from "../deps.ts";
-import { mediaTypeFromExt, resolveModuleLike } from "./utils.ts";
+import {
+  formatToMediaType,
+  mediaTypeFromExt,
+  resolveModuleLike,
+} from "./utils.ts";
 
 async function localRelativeResolve(
   specifier: string,
@@ -32,7 +37,7 @@ async function localRelativeResolve(
   return urlResolve(url, options);
 }
 
-export function localResolve(
+export async function localResolve(
   specifier: string,
   referrerURL: URL | string,
   options: ResolveOptions,
@@ -58,8 +63,15 @@ export function localResolve(
     return resolveModuleLike(moduleEntry, options.context.source, options);
   }
 
-  if (options.module === "cjs") {
-    return localCjsResolve(specifier, referrerURL, options);
+  if (
+    new URL(referrerURL).protocol === "file:" &&
+    options.context.module.kind === "npm"
+  ) {
+    const format = await esmFileFormat(referrerURL, options);
+
+    if (format === "commonjs") {
+      return localCjsResolve(specifier, referrerURL, options);
+    }
   }
 
   return localRelativeResolve(specifier, referrerURL, options);
@@ -94,7 +106,8 @@ async function localCjsResolve(
 
   if (typeof filePath === "string") {
     const url = toFileUrl(filePath);
-    const mediaType = mediaTypeFromExt(url);
+    const format = await esmFileFormat(url, options);
+    const mediaType = (format && formatToMediaType(format)) ?? "Unknown";
 
     return { url: toFileUrl(filePath), mediaType, local: filePath };
   }
@@ -104,7 +117,8 @@ async function localCjsResolve(
 
   if (typeof dirPath === "string") {
     const url = toFileUrl(dirPath);
-    const mediaType = mediaTypeFromExt(url);
+    const format = await esmFileFormat(url, options);
+    const mediaType = (format && formatToMediaType(format)) ?? "Unknown";
 
     return { url, mediaType, local: dirPath };
   }

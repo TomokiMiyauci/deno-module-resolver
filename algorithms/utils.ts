@@ -1,5 +1,6 @@
 import {
   extname,
+  type Format,
   type MediaType,
   type ModuleEntry,
   type Source,
@@ -69,3 +70,19 @@ export async function resolveModuleLike(
 }
 
 const message = `Cannot find module`;
+
+export function formatToMediaType(format: Format): MediaType {
+  switch (format) {
+    case "module":
+      return "JavaScript";
+
+    case "commonjs":
+      return "Cjs";
+
+    case "json":
+      return "Json";
+
+    case "wasm":
+      return "Wasm";
+  }
+}

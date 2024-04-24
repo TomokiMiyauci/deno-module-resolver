@@ -1,18 +1,17 @@
 import {
   esmFileFormat,
-  type Format,
   fromFileUrl,
   join,
   normalize,
-  NpmModule,
+  type NpmModule,
   readPackageJson,
-  Source,
+  type Source,
   toFileUrl,
 } from "../../deps.ts";
 import type { ResolveOptions, ResolveResult } from "../types.ts";
 import { resolveCjs } from "../npm/cjs_resolve.ts";
 import { resolveEsm } from "../npm/esm_resolve.ts";
-import { MediaType } from "../../deps.ts";
+import { formatToMediaType } from "../utils.ts";
 
 export async function npmResolve(
   module: NpmModule,
@@ -99,20 +98,4 @@ function createPackageURL(
   const packageURL = join(baseURL, name, version);
 
   return packageURL;
-}
-
-function formatToMediaType(format: Format): MediaType {
-  switch (format) {
-    case "module":
-      return "JavaScript";
-
-    case "commonjs":
-      return "Cjs";
-
-    case "json":
-      return "Json";
-
-    case "wasm":
-      return "Wasm";
-  }
 }
