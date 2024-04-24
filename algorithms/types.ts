@@ -14,20 +14,20 @@ export interface ResolveOptions {
    * If {@link module} is "cjs":
    * @default ["node", "require"]
    */
-  conditions: Iterable<string>;
+  conditions: Conditions;
 
   context?: Context | null;
   npm: NpmOptions;
 
   /**
-   * @default esm
-   */
-  module?: "esm" | "cjs";
-
-  /**
    * @default false
    */
   bareNodeBuiltins?: boolean;
+}
+
+export interface Conditions {
+  esm: Iterable<string>;
+  cjs: Iterable<string>;
 }
 
 export interface Context {

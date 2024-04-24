@@ -51,29 +51,20 @@ interface ResolveResult {
 }
 
 function resolveOptions(options: Partial<ResolveOptions>): ResolveOptions {
-  const module = options.module ?? "esm";
-
   return {
     readFile: options.readFile?.bind(options) ?? defaults.readFile,
     existDir: options.existDir?.bind(options) ?? defaults.existDir,
     existFile: options.existDir?.bind(options) ?? defaults.existFile,
     realUrl: options.realUrl?.bind(options) ?? defaults.realUrl,
     inspect: options.inspect?.bind(options) ?? defaults.inspect,
-    conditions: options.conditions ?? resolveConditions(module),
+    conditions: options.conditions ?? {
+      esm: ["deno", "node", "import"],
+      cjs: ["node", "require"],
+    },
     npm: { type: "global", denoDir: new DenoDir().root },
-    module,
     context: options.context,
     bareNodeBuiltins: options.bareNodeBuiltins ?? false,
   };
-}
-
-function resolveConditions(module: "esm" | "cjs"): string[] {
-  switch (module) {
-    case "esm":
-      return ["deno", "node", "import"];
-    case "cjs":
-      return ["node", "require"];
-  }
 }
 
 export async function resolve(

@@ -85,7 +85,7 @@ async function localCjsResolve(
   // a. LOAD_AS_FILE(Y + X)
   const Y = new URL(specifier, referrerURL);
   const context = {
-    conditions: options.conditions,
+    conditions: options.conditions.cjs,
     readFile: (path: string) => {
       const url = toFileUrl(path);
 

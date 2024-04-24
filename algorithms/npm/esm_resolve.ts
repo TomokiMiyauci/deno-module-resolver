@@ -21,7 +21,7 @@ export async function resolveEsm(
       packageURL,
       subpath,
       pjson.exports,
-      options.conditions,
+      options.conditions.esm,
       options,
     );
 

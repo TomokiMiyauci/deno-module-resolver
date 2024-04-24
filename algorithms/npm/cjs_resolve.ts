@@ -24,7 +24,7 @@ export async function resolveCjs(
 
   // b. LOAD_AS_FILE(DIR/X)
   const filePath = await resolveAsFile(base, {
-    conditions: options.conditions,
+    conditions: options.conditions.cjs,
     existDir: (path) => {
       const url = toFileUrl(path);
 
@@ -45,7 +45,7 @@ export async function resolveCjs(
 
   // c. LOAD_AS_DIRECTORY(DIR/X)
   const dirPath = await resolveAsDirectory(base, {
-    conditions: options.conditions,
+    conditions: options.conditions.cjs,
     existDir: (path) => {
       const url = toFileUrl(path);
 
@@ -83,7 +83,7 @@ async function resolvePackageExports(
     packageURL,
     subpath,
     exports,
-    options.conditions,
+    options.conditions.cjs,
     options,
   );
 }
